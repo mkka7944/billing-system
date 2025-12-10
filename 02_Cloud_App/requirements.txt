@@ -1,18 +1,12 @@
-# requirements.txt
-
-# Core Framework
 streamlit
-
-# Database & Environment
 supabase
 python-dotenv
-
-# Data Handling & Tables
 pandas
+plotly
 streamlit-aggrid
 
-# Forms & UI Components
 streamlit-pydantic
 streamlit-modal
 streamlit-image-select
 streamlit-camera-input-live
+watchdog
