@@ -1,0 +1,206 @@
+SGWMC BILLING SYSTEM - PROJECT STRUCTURE
+=========================================
+Last Updated: December 11, 2025, 8:42 PM
+Status: ✅ Cleaned and Organized
+
+billing-system/
+│
+├── 📄 README.md                          ← Main project documentation
+├── 🔍 verify_dependencies.py             ← Dependency verification tool
+│
+├── 📂 01_Local_Engine/                   ← Data Extraction & Processing
+│   ├── .env                              ← Environment configuration
+│   ├── requirements.txt                  ← Python dependencies
+│   │
+│   ├── 📁 inputs/
+│   │   ├── config_files/
+│   │   │   ├── areas_export.csv
+│   │   │   └── .placeholder
+│   │   ├── excel_dumps/
+│   │   │   ├── 01_Biller_Sargodha_Sep2025.csv
+│   │   │   └── .placeholder
+│   │   ├── raw_pdfs/
+│   │   │   └── .placeholder
+│   │   └── survey_dumps/
+│   │       └── .placeholder
+│   │
+│   ├── 📁 outputs/
+│   │   ├── logs/
+│   │   │   ├── orphaned_bills_log.txt
+│   │   │   └── .placeholder
+│   │   ├── master_db_ready/
+│   │   │   ├── MASTER_FINANCIALS_Nov-2025_02_Biller_Bhalwal_Nov2025.csv
+│   │   │   ├── MASTER_FINANCIALS_Oct-2025_01_Biller_Bhalwal_Oct2025.csv
+│   │   │   ├── MASTER_FINANCIALS_Sep-2025_01_Biller_Sargodha_Sep2025.csv
+│   │   │   └── process_log.txt
+│   │   ├── processed_pdfs/
+│   │   │   └── .placeholder
+│   │   └── scraped_data/
+│   │       ├── Bhalwal_paid_ALL_HISTORY_20251206_163657_Full.csv
+│   │       ├── Khushab_paid_ALL_HISTORY_20251206_163619_Full.csv
+│   │       └── Sargodha_paid_ALL_HISTORY_20251206_163516_Full.csv
+│   │
+│   └── 📁 scripts/
+│       ├── auditor.py                    ← Data validation tool
+│       ├── auditor2.py                   ← Enhanced auditor
+│       ├── bill-extractor-v4.py          ← 🔥 Main bill extraction script
+│       ├── bill-process-db.py            ← Bill processing
+│       ├── config.py                     ← Configuration management
+│       ├── db-uploader-1.py              ← Database uploader alt version
+│       ├── db-uploader.py                ← 🔥 Main database uploader
+│       ├── survey.py                     ← 🔥 Survey data extraction
+│       ├── survey_filtered.py            ← Filtered survey extraction
+│       ├── test-payment.py               ← Payment testing
+│       │
+│       └── backups/                      ← Script backups
+│           ├── bill-extractor-v2.py
+│           ├── bill-extractor-v3.py
+│           ├── db-uploader.py
+│           ├── debug-khushab.py
+│           ├── image-csv-final-batch.py
+│           └── survey-v1.py
+│
+├── 📂 02_Cloud_App/                      ← Streamlit Web Application
+│   ├── Home.py                           ← 🔥 Main entry point
+│   ├── README.md                         ← Cloud app documentation
+│   ├── requirements.txt                  ← Python dependencies
+│   ├── setup_notifications.py            ← Notification setup script
+│   ├── .env                              ← Environment configuration
+│   │
+│   ├── 📁 assets/
+│   │   ├── mobile.css                    ← Mobile responsive styles
+│   │   ├── style.css                     ← Main stylesheet
+│   │   └── .placeholder
+│   │
+│   ├── 📁 components/                    ← Reusable UI Components
+│   │   ├── auth.py                       ← Authentication components
+│   │   ├── data_grid.py                  ← Data grid display
+│   │   ├── db.py                         ← Database connection
+│   │   ├── forms.py                      ← Form components
+│   │   ├── metrics.py                    ← KPI metric cards
+│   │   ├── pagination.py                 ← Pagination controls
+│   │   ├── sidebar.py                    ← Sidebar navigation
+│   │   └── ui.py                         ← UI utilities
+│   │
+│   ├── 📁 database/
+│   │   └── notifications_schema.sql     ← Database schema
+│   │
+│   ├── 📁 pages/                         ← 🔥 Multi-page Application
+│   │   ├── 01_Dashboard.py               ← Executive dashboard
+│   │   ├── 02_Bills_Browser.py           ← Bills management
+│   │   ├── 03_Staff_Manager.py           ← Staff accounts
+│   │   ├── 04_Survey_Units.py            ← Survey data
+│   │   ├── 05_Ticket_Center.py           ← Issue tracking
+│   │   ├── 06_Locations.py               ← Location management
+│   │   ├── 07_Reports.py                 ← Reporting tools
+│   │   ├── 08_Bulk_Operations.py         ← Bulk actions
+│   │   ├── 09_Notifications.py           ← Notification system
+│   │   └── .placeholder
+│   │
+│   ├── 📁 services/                      ← Backend Services
+│   │   ├── auth.py                       ← Authentication service
+│   │   ├── db.py                         ← Database service
+│   │   └── repository.py                 ← Data repository pattern
+│   │
+│   ├── 📁 tests/
+│   │   └── .placeholder
+│   │
+│   └── 📁 utils/                         ← Utility Functions
+│       ├── bulk_operations.py            ← Bulk operation utilities
+│       ├── exporters.py                  ← Data export functions
+│       ├── migrate_passwords.py          ← Password migration
+│       ├── notifications.py              ← Notification utilities
+│       ├── security.py                   ← Security functions
+│       └── session.py                    ← Session management
+│
+├── 📂 Backups/                           ← Archived & Backup Files
+│   ├── folder.py
+│   ├── main - Copy.py
+│   │
+│   └── 📁 pages_archive/                 ← ⚠️ Archived duplicate pages
+│       ├── README.md                     ← Archive documentation
+│       ├── 1_Dashboard_old.py            ← Superseded by 01_Dashboard.py
+│       ├── 2_MC_UC_Browser.py            ← Legacy browser
+│       ├── 3_Ticket_Manager.py           ← Superseded by 05_Ticket_Center.py
+│       ├── 4_Compliance.py               ← Integrated into 07_Reports.py
+│       └── 5_Staff_Manager_old.py        ← Superseded by 03_Staff_Manager.py
+│
+└── 📂 docs/                              ← 📚 Project Documentation
+    ├── README.md                         ← Documentation index
+    │
+    ├── 📄 Installation & Setup
+    │   ├── 20251211_2028_Dependencies_Installed.md
+    │   ├── 20251211_2035_Installation_Complete.md
+    │   └── 20251211_2037_Quick_Start_Guide.txt
+    │
+    ├── 📄 Architecture & Database
+    │   ├── 20251211_1909_Comprehensive_Analysis_Report.md
+    │   └── 20251211_1909_Database_Schema_Reference.md
+    │
+    ├── 📄 Development & Testing
+    │   ├── 20251211_1909_Implementation_Checklist.md
+    │   └── 20251211_1909_Test_Plan.md
+    │
+    └── 📄 Maintenance
+        └── 20251211_2042_Cleanup_Summary.md
+
+
+═══════════════════════════════════════════════════════════
+LEGEND
+═══════════════════════════════════════════════════════════
+
+🔥 = Primary/Critical Files
+📂 = Directory
+📁 = Subdirectory
+📄 = Document File
+⚠️ = Archived/Deprecated
+🔍 = Utility/Tool
+✅ = Active/Current
+
+
+═══════════════════════════════════════════════════════════
+KEY STATISTICS
+═══════════════════════════════════════════════════════════
+
+Total Directories:           24
+Total Python Files:          40+
+Total Documentation Files:   11
+Active Pages:                9
+Archived Pages:              5
+Requirements Files:          2
+
+
+═══════════════════════════════════════════════════════════
+QUICK ACCESS PATHS
+═══════════════════════════════════════════════════════════
+
+Start Cloud App:
+  → 02_Cloud_App\Home.py
+
+Extract Bills:
+  → 01_Local_Engine\scripts\bill-extractor-v4.py
+
+Upload Data:
+  → 01_Local_Engine\scripts\db-uploader.py
+
+Documentation:
+  → docs\README.md
+
+Quick Start:
+  → docs\20251211_2037_Quick_Start_Guide.txt
+
+
+═══════════════════════════════════════════════════════════
+CLEANUP STATUS
+═══════════════════════════════════════════════════════════
+
+✅ Root directory cleaned
+✅ Documentation centralized
+✅ Duplicate pages archived
+✅ Timestamp naming applied
+✅ README files created
+✅ Structure optimized
+
+
+═══════════════════════════════════════════════════════════
+Last Updated: December 11, 2025, 8:42 PM

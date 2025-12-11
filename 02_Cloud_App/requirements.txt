@@ -4,9 +4,7 @@ python-dotenv
 pandas
 plotly
 streamlit-aggrid
-
-streamlit-pydantic
 streamlit-modal
 streamlit-image-select
-streamlit-camera-input-live
 watchdog
+pydantic-settings
