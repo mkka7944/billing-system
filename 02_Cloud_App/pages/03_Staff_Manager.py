@@ -3,6 +3,7 @@ import pandas as pd
 from services import auth, repository
 from components import sidebar, data_grid
 from services.db import supabase
+from utils.security import hash_password  # Import the hash_password function
 
 st.set_page_config(page_title="Staff Manager", layout="wide")
 sidebar.render_sidebar()
@@ -24,9 +25,12 @@ with st.expander("➕ Add New Staff Member"):
         if submitted:
             if username and password:
                 try:
+                    # Hash the password before storing
+                    hashed_password = hash_password(password)
+                    
                     res = repository.upsert_record("staff", {
                         "username": username,
-                        "password": password,
+                        "password": hashed_password,  # Store the hashed password
                         "full_name": full_name,
                         "role": role,
                         "assigned_city": city,

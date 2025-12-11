@@ -2,6 +2,7 @@ import streamlit as st
 import time
 from services import auth
 from components import sidebar
+from utils.session import check_session_timeout, update_last_activity
 
 # --- Page Config ---
 st.set_page_config(
@@ -13,16 +14,31 @@ st.set_page_config(
 
 # --- Load Custom CSS ---
 def local_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    try:
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Silently ignore if CSS files are missing
+        pass
+    except Exception as e:
+        # Silently ignore any other CSS loading errors
+        pass
 
 try:
     local_css("assets/style.css")
-except FileNotFoundError:
-    pass # CSS might be missing in dev
+    local_css("assets/mobile.css")
+except:
+    # Silently ignore CSS loading errors
+    pass
 
 # --- Main App Logic ---
 def main():
+    
+    # Check session timeout
+    check_session_timeout()
+    
+    # Update last activity
+    update_last_activity()
     
     # Render Sidebar (always, but state aware)
     sidebar.render_sidebar()

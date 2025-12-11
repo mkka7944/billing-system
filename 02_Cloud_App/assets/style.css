@@ -32,6 +32,25 @@ section[data-testid="stSidebar"] {
     border-right: 1px solid #E2E8F0;
 }
 
+/* Dark mode sidebar */
+@media (prefers-color-scheme: dark) {
+    section[data-testid="stSidebar"] {
+        background-color: #0F172A;
+        border-right: 1px solid #334155;
+    }
+    
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3 {
+        color: #F1F5F9;
+    }
+    
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] div {
+        color: #E2E8F0;
+    }
+}
+
 /* Buttons */
 button[kind="primary"] {
     background-color: #2563EB;

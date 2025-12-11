@@ -6,6 +6,7 @@ from components.auth import enforce_auth
 from components.db import supabase
 from components.forms import StaffModel
 from components.ui import confirmation_modal # This import will now work
+from utils.security import hash_password  # Import password hashing function
 
 enforce_auth(head_admin_only=True)
 
@@ -37,6 +38,9 @@ with tab_create:
         try:
             # Validate data using the Pydantic model
             StaffModel(**new_user)
+            # Hash the password before storing
+            if new_user["password"]:
+                new_user["password"] = hash_password(new_user["password"])
             supabase.table('staff').insert(new_user).execute()
             st.success("Staff member created successfully!"); st.rerun()
         except ValidationError as e:
@@ -70,6 +74,9 @@ with tab_edit:
             update_payload = edited_user.copy()
             if not update_payload['password']:
                 del update_payload['password']
+            else:
+                # Hash the new password before storing
+                update_payload['password'] = hash_password(update_payload['password'])
             
             try:
                 supabase.table('staff').update(update_payload).eq('id', user_data['id']).execute()

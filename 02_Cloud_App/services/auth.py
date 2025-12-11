@@ -1,6 +1,8 @@
 import streamlit as st
 from services.db import supabase
 import time
+from utils.security import verify_password
+from utils.session import init_session
 
 def login(username, password):
     """
@@ -8,12 +10,14 @@ def login(username, password):
     Returns: True if successful, False otherwise.
     """
     try:
-        # Securely query: match username and password
-        # Note: In production preferably use Supabase Auth, but using custom table as per existing codebase.
-        response = supabase.table("staff").select("*").eq("username", username).eq("password", password).single().execute()
+        # First, get the user by username to retrieve the hashed password
+        user_response = supabase.table("staff").select("*").eq("username", username).single().execute()
         
-        user = response.data
-        if user:
+        user = user_response.data
+        # Check password against the 'password' field (which should contain the hashed password)
+        if user and verify_password(password, user.get('password', '')):
+            # Password is correct
+            
             if not user.get('is_active', True):
                 st.error("🚫 Account is inactive. Please contact support.")
                 return False
@@ -24,6 +28,9 @@ def login(username, password):
             st.session_state["user_role"] = user.get('role', 'staff')
             st.session_state["user_name"] = user.get('full_name', 'User')
             st.session_state["assigned_city"] = user.get('assigned_city')
+            
+            # Initialize session management
+            init_session()
             
             # Persist role for UI logic
             st.toast(f"Welcome back, {user.get('full_name')}!", icon="👋")
