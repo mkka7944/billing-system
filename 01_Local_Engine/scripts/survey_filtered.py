@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """
-Advanced Survey Extractor v5 (Deep Drill Fix) - PAGINATION VERSION
+Advanced Survey Extractor v6 - Multi-District/Tehsil Support
 - Reads survey data by fetching a specified number of pages
+- Processes multiple district/tehsil combinations:
+  1. District Khushab (16) / Tehsil Khushab (133)
+  2. District Sargodha (32) / Tehsil Sargodha (143)
+  3. District Sargodha (32) / Tehsil Bhalwal (139)
+- Outputs separate Excel/CSV files for each combination
 - Outputs to Excel with clickable image URLs
 - FIX: Aggressively hunts for 'Answers' in multiple possible keys (json/table/str).
 - FIX: Force-parses stringified JSON to ensure nested fields appear as columns.
-- Strategy: Direct fetch from Sargodha District/Sargodha Tehsil using CSV data.
 """
 
 import requests
@@ -18,6 +22,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from urllib.parse import urlparse, urljoin
 from tqdm import tqdm
+
 # -----------------------------
 # USER CONFIG
 # -----------------------------
@@ -55,6 +60,13 @@ DISPLAY_COLUMNS_ALL = [
     {"key":"billers_list","column":True,"value":"Total Billers"}, {"key":"new_str","column":True,"value":"Attachment"},
     {"key":"added_by_str","column":False,"value":"Added By"}, {"key":"added_date_time","column":False,"value":"Added Date&Time"},
     {"key":"app_version","column":True,"value":"App Version"}, {"key":"action","column":True,"value":"Action"},
+]
+
+# District/Tehsil combinations to process
+DISTRICT_TEHSIL_COMBINATIONS = [
+    {"district_id": 16, "tehsil_id": 133, "district_name": "Khushab", "tehsil_name": "Khushab"},
+    {"district_id": 32, "tehsil_id": 143, "district_name": "Sargodha", "tehsil_name": "Sargodha"},
+    {"district_id": 32, "tehsil_id": 139, "district_name": "Sargodha", "tehsil_name": "Bhalwal"}
 ]
 
 # -----------------------------
@@ -171,6 +183,7 @@ def fetch_survey_page(session, page, size, district_id, tehsil_id):
         except Exception as e:
             time.sleep(1)
     return {}
+
 def extract_records_from_response(data):
     if not data: return []
     payload = data.get("data", data)
@@ -184,42 +197,6 @@ def extract_records_from_response(data):
                 if isinstance(value[0], dict) and ('id' in value[0] or 'survey_id' in value[0]):
                     return value
     return payload if isinstance(payload, list) else []
-# -----------------------------
-# FIND SARGODHA IDS
-# -----------------------------
-def find_sargodha_ids(areas):
-    """Find Sargodha district and tehsil IDs from the areas data"""
-    # Find Sargodha district
-    sargodha_district = None
-    for area in areas:
-        if "sargodha" in area.get("district_name", "").lower():
-            sargodha_district = area
-            break
-    
-    if not sargodha_district:
-        print("⚠️ Sargodha district not found in areas data")
-        return None, None
-    
-    district_id = sargodha_district.get("district_id")
-    district_name = sargodha_district.get("district_name")
-    
-    # Find Sargodha tehsil within the district
-    sargodha_tehsil = None
-    for area in areas:
-        if (area.get("district_id") == district_id and 
-            "sargodha" in area.get("tehsil_name", "").lower()):
-            sargodha_tehsil = area
-            break
-    
-    if not sargodha_tehsil:
-        print("⚠️ Sargodha tehsil not found in areas data")
-        return district_id, None
-    
-    tehsil_id = sargodha_tehsil.get("tehsil_id")
-    tehsil_name = sargodha_tehsil.get("tehsil_name")
-    
-    print(f"📍 Found: {district_name} (ID: {district_id}) / {tehsil_name} (ID: {tehsil_id})")
-    return district_id, tehsil_id
 
 # -----------------------------
 # DATA PROCESSOR (Deep Drill Logic)
@@ -282,8 +259,8 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
         except:
             pass # Keep as string if parse fails
 
-    # Initialize consumer type as unknown
-    consumer_type = "Unknown"
+    # Initialize consumer type as domestic by default
+    consumer_type = "Domestic"
     
     # Case A: Dictionary (Ideal)
     if isinstance(answers, dict):
@@ -295,9 +272,20 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
             
             # Determine consumer type based on house type or type field
             if k.lower() == "house type":
-                consumer_type = "Domestic"  # If house type field exists, it's domestic
+                # Check if house type value is house/flat for domestic classification
+                house_value = str(v).strip().lower()
+                if house_value in ["house", "flat", "home"]:
+                    consumer_type = "Domestic"
+                elif house_value == "":
+                    # If house type is empty, check the type field for commercial indicators
+                    pass  # Will be handled by type field logic below
+                else:
+                    consumer_type = "Commercial"
             elif k.lower() == "type" and str(v).strip().lower() not in ["", "house", "residential"]:
-                consumer_type = "Commercial"  # If type field exists and is not residential, it's commercial
+                # If type field contains shop details, classify as Commercial
+                type_value = str(v).strip().lower()
+                if any(keyword in type_value for keyword in ["shop", "store", "business", "commercial"]):
+                    consumer_type = "Commercial"
                 
     # Case B: Pipe Separated String (Legacy)
     elif isinstance(answers, str) and "|" in answers:
@@ -309,9 +297,20 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
                 
                 # Determine consumer type based on house type or type field
                 if k.lower().strip() == "house type":
-                    consumer_type = "Domestic"  # If house type field exists, it's domestic
+                    # Check if house type value is house/flat for domestic classification
+                    house_value = v.strip().lower()
+                    if house_value in ["house", "flat", "home"]:
+                        consumer_type = "Domestic"
+                    elif house_value == "":
+                        # If house type is empty, check the type field for commercial indicators
+                        pass  # Will be handled by type field logic below
+                    else:
+                        consumer_type = "Commercial"
                 elif k.lower().strip() == "type" and v.strip().lower() not in ["", "house", "residential"]:
-                    consumer_type = "Commercial"  # If type field exists and is not residential, it's commercial
+                    # If type field contains shop details, classify as Commercial
+                    type_value = v.strip().lower()
+                    if any(keyword in type_value for keyword in ["shop", "store", "business", "commercial"]):
+                        consumer_type = "Commercial"
             else:
                 flat["Additional Info"] = flat.get("Additional Info", "") + " " + part.strip()
     
@@ -323,57 +322,15 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
 # -----------------------------
 # MAIN WORKFLOW
 # -----------------------------
-def main():
-    print("================================================")
-    print("   Advanced Survey Extractor v5 (SARGODHA ONLY)   ")
-    print("================================================\n")
-    ensure_dir(OUTPUT_FOLDER)
-    
-    # Read areas data from CSV
-    areas = read_areas_csv(AREAS_CSV)
-    if not areas:
-        print("❌ Error: Could not read areas data")
-        return
-    
-    # Find Sargodha district and tehsil IDs
-    print("🔍 Looking for Sargodha district/tehsil in areas data...")
-    district_id, tehsil_id = find_sargodha_ids(areas)
-    
-    if not district_id:
-        print("❌ Error: Could not find Sargodha district")
-        return
-    
-    if not tehsil_id:
-        print("❌ Error: Could not find Sargodha tehsil")
-        return
-    
-    # Get the number of pages to fetch
-    pages_input = input("Enter number of pages to fetch (e.g., 5 for 1250 records): ").strip()
-    try:
-        num_pages = int(pages_input)
-        if num_pages <= 0:
-            print("Invalid number of pages. Using default of 5 pages.")
-            num_pages = 5
-    except ValueError:
-        print("Invalid input. Using default of 5 pages.")
-        num_pages = 5
-
-    session = do_login()
-    print(f"\n🚀 FETCHING DATA FROM SARGODHA DISTRICT/TEHSIL FOR {num_pages} PAGES...\n")
-    
-    MASTER_DATA = []
-    grand_total_records = 0
-    start_time_global = time.time()
-    
-    print("Processing: Sargodha District/Sargodha Tehsil...")
+def process_district_tehsil_combination(session, district_id, tehsil_id, district_name, tehsil_name, num_pages):
+    """Process a single district/tehsil combination and return the data"""
+    print(f"\n🚀 FETCHING DATA FROM {district_name.upper()} DISTRICT/{tehsil_name.upper()} TEHSIL FOR {num_pages} PAGES...\n")
     
     area_records_raw = []
-    start_time_area = time.time()
     
-    # Fetch specified number of pages from Sargodha District/Sargodha Tehsil
+    # Fetch specified number of pages
     print(f"   📥 Fetching {num_pages} pages of data...")
     total_records_fetched = 0
-    area_records_raw = []
     
     # Create a progress bar for pages
     with tqdm(total=num_pages, desc="   📄 Fetching pages", leave=True) as page_bar:
@@ -395,40 +352,133 @@ def main():
     print()  # New line after progress updates
     
     if not area_records_raw:
-        print("   ⚠️ No records found for Sargodha District/Sargodha Tehsil.")
-        return
+        print(f"   ⚠️ No records found for {district_name} District/{tehsil_name} Tehsil.")
+        return []
         
     processed_area_data = []
     for raw in area_records_raw:
         # Extract location information from the record
-        district_name = raw.get('districts.district_id.name', 'Sargodha')
-        tehsil_name = raw.get('tehsils.tehsil_id.name', 'Sargodha')
         uc_name = raw.get('sw_areas.uc_id.name', 'Unknown UC')
         
         flat_row = flatten_record(raw, district_name, tehsil_name, uc_name)
         processed_area_data.append(flat_row)
     
     if not processed_area_data:
-        print("   ⚠️ No records found for Sargodha District/Sargodha Tehsil.")
+        print(f"   ⚠️ No records found for {district_name} District/{tehsil_name} Tehsil.")
+        return []
+        
+    return processed_area_data
+
+def save_data_to_files(data, district_name, tehsil_name):
+    """Save data to separate Excel and CSV files"""
+    if not data:
+        print(f"   ⚠️ No data to save for {district_name} District/{tehsil_name} Tehsil.")
         return
         
-    MASTER_DATA.extend(processed_area_data)
-    grand_total_records += len(processed_area_data)
-    elapsed_area = round(time.time() - start_time_area, 2)
+    print(f"\n🔗 Generating Files for {district_name} District/{tehsil_name} Tehsil (Please wait)...")
+    df = pd.DataFrame(data)
+    df.insert(0, "Sr#", range(1, len(df) + 1))
     
-    print("   ------------------------------------------------")
-    print("   ✅ COMPLETED: Sargodha District/Sargodha Tehsil")
-    print(f"   📄 Records:   {len(processed_area_data)}")
-    print(f"   ⏱️ Time:      {elapsed_area}s")
-    print("   ------------------------------------------------\n")
+    # Use descriptive filename based on district/tehsil
+    filename_base = f"{district_name.upper()}_{tehsil_name.upper()}_SURVEY_DATA"
+    
+    # Sort by Survey Date if available
+    if "Survey Date" in df.columns:
+         df.sort_values(by=["Survey Date", "Survey Time"], ascending=False, inplace=True)
+    
+    # Create Excel file with clickable links
+    excel_filename = os.path.join(OUTPUT_FOLDER, f"{filename_base}.xlsx")
+    df.to_excel(excel_filename, index=False)
+    
+    # Create CSV file with separate image URL columns and no clickable links
+    csv_filename = os.path.join(OUTPUT_FOLDER, f"{filename_base}.csv")
+    
+    # Remove clickable link columns for CSV and exclude the combined "Image URLs" column
+    csv_columns = [col for col in df.columns if not col.startswith("Clickable Image") and col != "Image URLs"]
+    df_csv = df[csv_columns]
+    
+    # Reorder columns to put Image URL columns at the end
+    image_url_columns = [col for col in csv_columns if col.startswith("Image URL")]
+    other_columns = [col for col in csv_columns if not col.startswith("Image URL")]
+    reordered_columns = other_columns + image_url_columns
+    df_csv = df_csv[reordered_columns]        
+    
+    # Add error handling for file writing
+    try:
+        df_csv.to_csv(csv_filename, index=False, encoding='utf-8-sig')
+    except PermissionError:
+        print(f"⚠️ Permission denied when writing CSV file: {csv_filename}")
+        print("   Please close any applications that might be using this file and try again.")
+        print("   Common causes: Excel has the file open, or Google Drive is syncing the file.")
+        return
+    except Exception as e:
+        print(f"⚠️ Error writing CSV file: {e}")
+        return
+    
+    print(f"   📄 Records:   {len(data)}")
+    print(f"   💾 EXCEL FILE: {excel_filename}")
+    print(f"   💾 CSV FILE:   {csv_filename}")
 
-    if MASTER_DATA:
+def main():
+    print("================================================")
+    print("   Advanced Survey Extractor v6 (MULTI-DISTRICT)   ")
+    print("================================================\n")
+    ensure_dir(OUTPUT_FOLDER)
+    
+    # Read areas data from CSV
+    areas = read_areas_csv(AREAS_CSV)
+    if not areas:
+        print("❌ Error: Could not read areas data")
+        return
+    
+    # Get the number of pages to fetch
+    pages_input = input("Enter number of pages to fetch (e.g., 5 for 1250 records): ").strip()
+    try:
+        num_pages = int(pages_input)
+        if num_pages <= 0:
+            print("Invalid number of pages. Using default of 5 pages.")
+            num_pages = 5
+    except ValueError:
+        print("Invalid input. Using default of 5 pages.")
+        num_pages = 5
+
+    session = do_login()
+    
+    # Process each district/tehsil combination
+    all_processed_data = []
+    
+    for combo in DISTRICT_TEHSIL_COMBINATIONS:
+        district_id = combo["district_id"]
+        tehsil_id = combo["tehsil_id"]
+        district_name = combo["district_name"]
+        tehsil_name = combo["tehsil_name"]
+        
+        print(f"\n{'='*50}")
+        print(f"Processing: {district_name} District/{tehsil_name} Tehsil")
+        print(f"{'='*50}")
+        
+        # Process this combination
+        processed_data = process_district_tehsil_combination(
+            session, district_id, tehsil_id, district_name, tehsil_name, num_pages)
+        
+        # Save separate files for this combination
+        save_data_to_files(processed_data, district_name, tehsil_name)
+        
+        # Add to master collection
+        all_processed_data.extend(processed_data)
+    
+    # Create combined master files
+    if all_processed_data:
+        print("\n" + "="*50)
+        print("GENERATING COMBINED MASTER FILES")
+        print("="*50)
+        
         print("\n🔗 Generating Combined Master Files (Please wait)...")
-        df_master = pd.DataFrame(MASTER_DATA)
+        df_master = pd.DataFrame(all_processed_data)
         df_master.insert(0, "Sr#", range(1, len(df_master) + 1))
         
-        # Use fixed filename instead of timestamped one
-        fixed_name = "SARGODHA_SURVEY_MASTER"
+        # Use fixed filename for master files
+        fixed_name = "ALL_DISTRICTS_TEHSILS_MASTER"
         
         # Sort by Survey Date if available
         if "Survey Date" in df_master.columns:
@@ -463,17 +513,15 @@ def main():
             print(f"⚠️ Error writing CSV file: {e}")
             return
         
-        elapsed_global = round((time.time() - start_time_global) / 60, 2)
-        
-        print("\n================================================")
+        print("\n" + "="*50)
         print("🎉 MISSION ACCOMPLISHED")
-        print(f"📄 Grand Total Records: {grand_total_records}")
+        print(f"📄 Grand Total Records: {len(all_processed_data)}")
         print(f"📄 Pages Fetched:       {num_pages} pages ({PAGE_SIZE} records per page)")
-        print(f"💾 EXCEL FILE:          {excel_filename}")
-        print(f"💾 CSV FILE:            {csv_filename}")
-        print("================================================")
+        print(f"💾 MASTER EXCEL FILE:   {excel_filename}")
+        print(f"💾 MASTER CSV FILE:     {csv_filename}")
+        print("="*50)
     else:
-        print("\n⚠️ No data collected.")
+        print("\n⚠️ No data collected from any district/tehsil combination.")
 
 if __name__ == "__main__":
     main()
