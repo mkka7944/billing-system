@@ -38,21 +38,21 @@ def inject_custom_css():
         --border-color: #30363d;
         --text-primary: #e6edf3;
         --text-secondary: #7d8590;
-        --accent-purple: #8b5cf6;
-        --accent-blue: #3b82f6;
+        --accent-primary-dark: #764ba2;     /* Dark purple */
+        --accent-primary-light: #a78bfa;    /* Light purple */
+        --accent-primary-lighter: #c4b5fd;  /* Lighter purple */
         --accent-green: #10b981;
         --accent-orange: #f59e0b;
         --accent-red: #ef4444;
-        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --gradient-card: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+        --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #764ba2 100%);
+        --gradient-card: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
         --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
         --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
         --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
-        /* Subtle hover effect colors */
+        /* Subtle hover effect colors using primary color */
         --hover-subtle: rgba(139, 92, 246, 0.1);
-        --hover-subtle-blue: rgba(59, 130, 246, 0.1);
-        --hover-subtle-green: rgba(16, 185, 129, 0.1);
+        --hover-subtle-light: rgba(167, 139, 250, 0.1);
     }
     
     /* Main App Background */
@@ -75,51 +75,53 @@ def inject_custom_css():
         color: var(--text-secondary);
     }
     
-    /* Metric Cards - Modern Glass Morphism */
+    /* Metric Cards - Compact with Primary Colors */
     [data-testid="stMetric"] {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 1.5rem;
+        border-left: 4px solid var(--accent-primary-light);
+        border-radius: 12px;
+        padding: 1rem;
         box-shadow: var(--shadow-md);
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
     
     [data-testid="stMetric"]:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-lg), var(--shadow-glow);
-        border-color: var(--accent-purple);
+        background: var(--hover-subtle-light);
+        border-left-color: var(--accent-primary-lighter);
+        box-shadow: var(--shadow-md);
     }
     
     [data-testid="stMetric"] label {
         color: var(--text-secondary) !important;
-        font-size: 0.875rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     
     [data-testid="stMetric"] [data-testid="stMetricValue"] {
         color: var(--text-primary) !important;
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
     }
     
-    /* Buttons - Modern with Gradient */
+    /* Buttons - Modern with Primary Color */
     .stButton > button {
-        background: var(--gradient-primary);
+        background: var(--accent-primary-dark);
         color: white;
         border: none;
-        border-radius: 12px;
-        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        padding: 0.6rem 1.25rem;
         font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: var(--shadow-md);
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg), var(--shadow-glow);
+        background: var(--accent-primary-light);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
     
     .stButton > button:disabled {
@@ -132,6 +134,7 @@ def inject_custom_css():
     .streamlit-expanderHeader {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
+        border-left: 4px solid var(--accent-primary-light);
         border-radius: 12px;
         color: var(--text-primary) !important;
         font-weight: 600;
@@ -139,7 +142,7 @@ def inject_custom_css():
     }
     
     .streamlit-expanderHeader:hover {
-        background: var(--hover-subtle);
+        background: var(--hover-subtle-light);
     }
     
     .streamlit-expanderContent {
@@ -153,13 +156,13 @@ def inject_custom_css():
     .stAlert {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
+        border-left: 4px solid var(--accent-primary-light);
         border-radius: 12px;
-        border-left: 4px solid var(--accent-blue);
         padding: 1rem;
     }
     
     .stAlert:hover {
-        background: var(--hover-subtle-blue);
+        background: var(--hover-subtle-light);
     }
     
     /* Dataframe/Tables */
@@ -207,15 +210,16 @@ def inject_custom_css():
     .modern-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 1.5rem;
+        border-left: 4px solid var(--accent-primary-light);
+        border-radius: 12px;
+        padding: 1.25rem;
         box-shadow: var(--shadow-md);
         transition: all 0.3s ease;
     }
     
     .modern-card:hover {
-        background: var(--hover-subtle);
-        border-color: var(--accent-purple);
+        background: var(--hover-subtle-light);
+        border-left-color: var(--accent-primary-lighter);
         box-shadow: var(--shadow-lg);
     }
     
@@ -223,7 +227,7 @@ def inject_custom_css():
     .activity-item {
         background: var(--bg-tertiary);
         border: 1px solid var(--border-color);
-        border-left: 3px solid var(--accent-purple);
+        border-left: 3px solid var(--accent-primary-light);
         border-radius: 12px;
         padding: 1rem;
         margin-bottom: 0.75rem;
@@ -231,32 +235,33 @@ def inject_custom_css():
     }
     
     .activity-item:hover {
-        background: var(--hover-subtle);
+        background: var(--hover-subtle-light);
         transform: translateX(4px);
-        border-left-color: var(--accent-blue);
+        border-left-color: var(--accent-primary-lighter);
     }
     
-    /* Header Gradient */
-    .header-gradient {
-        background: var(--gradient-primary);
-        border-radius: 20px;
-        padding: 3rem 2rem;
-        text-align: center;
-        box-shadow: var(--shadow-lg), var(--shadow-glow);
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
+    /* Compact Header Panel */
+    .header-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-left: 4px solid var(--accent-primary-light);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-md);
     }
     
-    .header-gradient::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: rotate 20s linear infinite;
+    .header-panel h1 {
+        color: var(--text-primary) !important;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem 0;
+    }
+    
+    .header-panel p {
+        color: var(--text-secondary) !important;
+        font-size: 0.875rem;
+        margin: 0;
     }
     
     @keyframes rotate {
@@ -329,45 +334,35 @@ def main():
 def render_home_page():
     """Modern dark-themed home page with sleek design"""
     
-    # Consolidated Header with User Info and Time/Date
+    # Compact Header Panel with Logo and Time/Date
     st.markdown("""
-    <div class='header-gradient'>
+    <div class='header-panel'>
         <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;'>
             <div>
-                <h1 style='margin: 0 0 0.5rem 0;'>🇵🇰 Suthra Punjab Operations Center</h1>
-                <p style='margin: 0;'>Waste Management & Billing System</p>
+                <h1>🇵🇰 Suthra Punjab Operations Center</h1>
+                <p>Waste Management & Billing System</p>
             </div>
             <div style='text-align: right;'>
-                <div style='font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;'>Welcome, <span style='background: linear-gradient(135deg, #ffffff, #e0e0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>{}</span>!</div>
-                <div style='font-size: 0.9rem; margin-bottom: 0.5rem;'>Role: <strong style='color: #d0c0ff;'>{}</strong> | Location: <strong style='color: #c0d0ff;'>{}</strong></div>
-                <div style='display: flex; gap: 1rem; justify-content: flex-end;'>
-                    <div style='background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 8px;'>
-                        <div style='font-size: 0.75rem; opacity: 0.8;'>CURRENT TIME</div>
-                        <div style='font-size: 1.1rem; font-weight: 600;'>⏰ {}</div>
-                    </div>
-                    <div style='background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 8px;'>
-                        <div style='font-size: 0.75rem; opacity: 0.8;'>TODAY'S DATE</div>
-                        <div style='font-size: 1.1rem; font-weight: 600;'>📅 {}</div>
-                    </div>
-                </div>
+                <div style='font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-primary);'>{}, {}</div>
+                <div style='font-size: 0.8rem; color: var(--text-secondary);'>Role: {} | Location: {}</div>
             </div>
         </div>
     </div>
     """.format(
+        datetime.now().strftime("%I:%M %p"),
+        datetime.now().strftime("%b %d, %Y"),
         st.session_state.get('user_name', 'User'),
         st.session_state.get('user_role', 'N/A').upper(),
-        st.session_state.get('assigned_city', 'N/A'),
-        datetime.now().strftime("%I:%M %p"),
-        datetime.now().strftime("%b %d, %Y")
+        st.session_state.get('assigned_city', 'N/A')
     ), unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Modern Section Header
     st.markdown("""
-    <div style='margin: 2rem 0 1.5rem 0;'>
-        <h2 style='margin: 0; font-size: 1.75rem;'>📊 System Overview</h2>
-        <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary);'>Real-time metrics and performance indicators</p>
+    <div style='margin: 1.5rem 0 1rem 0;'>
+        <h2 style='margin: 0; font-size: 1.5rem;'>📊 System Overview</h2>
+        <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;'>Real-time metrics and performance indicators</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -402,59 +397,53 @@ def render_home_page():
             active_staff = 24
             open_tickets = 15
     
-    # KPI Cards
+    # Compact KPI Cards
     kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
     
     with kpi1:
         st.metric(
             label="💳 Total Bills",
-            value=f"{total_bills:,}",
-            delta=f"+{int(total_bills * 0.08)} this week"
+            value=f"{total_bills:,}"
         )
     
     with kpi2:
         st.metric(
             label="✅ Paid Bills",
-            value=f"{paid_bills:,}",
-            delta=f"{(paid_bills/total_bills*100):.1f}% collection" if total_bills > 0 else "0%"
+            value=f"{paid_bills:,}"
         )
     
     with kpi3:
         st.metric(
-            label="⏳ Pending Bills",
-            value=f"{pending_bills:,}",
-            delta=f"-{int(pending_bills * 0.05)} cleared",
-            delta_color="inverse"
+            label="⏳ Pending",
+            value=f"{pending_bills:,}"
         )
     
     with kpi4:
         st.metric(
-            label="💰 Revenue Collected",
-            value=f"PKR {total_revenue/1000000:.2f}M",
-            delta="+12.5% vs last month"
+            label="💰 Revenue",
+            value=f"PKR {total_revenue/1000000:.1f}M"
         )
     
     with kpi5:
         st.metric(
-            label="👥 Active Staff",
-            value=f"{active_staff}",
-            delta=f"{open_tickets} open tickets"
+            label="👥 Staff",
+            value=f"{active_staff}"
         )
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     
     # Charts Section with Modern Headers
     st.markdown("""
-    <div style='margin: 2rem 0 1.5rem 0;'>
-        <h2 style='margin: 0; font-size: 1.75rem;'>📈 Analytics & Insights</h2>
-        <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary);'>Visual representation of key metrics</p>
+    <div style='margin: 1.5rem 0 1rem 0;'>
+        <h2 style='margin: 0; font-size: 1.5rem;'>📈 Analytics & Insights</h2>
+        <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;'>Visual representation of key metrics</p>
     </div>
     """, unsafe_allow_html=True)
     
     chart_col1, chart_col2 = st.columns(2)
     
     with chart_col1:
-        st.markdown("<h3 style='font-size: 1.25rem; margin-bottom: 1rem;'>Payment Status Distribution</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='font-size: 1.1rem; margin-bottom: 0.75rem;'>Payment Status Distribution</h3>", unsafe_allow_html=True)
         
         # Create pie chart
         payment_data = pd.DataFrame({
@@ -471,25 +460,29 @@ def render_home_page():
             hole=0.5
         )
         fig_pie.update_layout(
-            height=350,
-            margin=dict(t=20, b=20, l=20, r=20),
+            height=300,
+            margin=dict(t=15, b=15, l=15, r=15),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#e6edf3', size=12),
+            font=dict(color='#e6edf3', size=11),
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=-0.2,
+                y=-0.15,
                 xanchor="center",
                 x=0.5
             )
         )
-        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        fig_pie.update_traces(
+            textposition='inside', 
+            textinfo='percent+label',
+            marker=dict(colors=['#10b981', '#f59e0b', '#ef4444'])
+        )
         st.plotly_chart(fig_pie, width='stretch')
     
     with chart_col2:
-        st.markdown("<h3 style='font-size: 1.25rem; margin-bottom: 1rem;'>Weekly Collection Trend</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='font-size: 1.1rem; margin-bottom: 0.75rem;'>Weekly Collection Trend</h3>", unsafe_allow_html=True)
         
         # Create line chart
         dates = pd.date_range(end=datetime.now(), periods=7).strftime('%a')
@@ -505,17 +498,17 @@ def render_home_page():
             markers=True
         )
         fig_line.update_traces(
-            line_color='#8b5cf6',
-            fillcolor='rgba(139, 92, 246, 0.2)',
+            line_color='#a78bfa',
+            fillcolor='rgba(167, 139, 250, 0.2)',
             line_width=3,
-            marker=dict(size=8, color='#8b5cf6')
+            marker=dict(size=8, color='#a78bfa')
         )
         fig_line.update_layout(
-            height=350,
-            margin=dict(t=20, b=20, l=20, r=20),
+            height=300,
+            margin=dict(t=15, b=15, l=15, r=15),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#e6edf3', size=12),
+            font=dict(color='#e6edf3', size=11),
             xaxis=dict(
                 showgrid=True,
                 gridcolor='rgba(48, 54, 61, 0.5)',
@@ -526,7 +519,8 @@ def render_home_page():
                 gridcolor='rgba(48, 54, 61, 0.5)',
                 zeroline=False
             ),
-            hovermode='x unified'
+            hovermode='x unified',
+            showlegend=False
         )
         st.plotly_chart(fig_line, width='stretch')
     
@@ -537,9 +531,9 @@ def render_home_page():
     
     with action_col1:
         st.markdown("""
-        <div style='margin-bottom: 1.5rem;'>
-            <h2 style='margin: 0; font-size: 1.75rem;'>⚡ Quick Actions</h2>
-            <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary);'>Navigate to key system modules</p>
+        <div style='margin-bottom: 1rem;'>
+            <h2 style='margin: 0; font-size: 1.5rem;'>⚡ Quick Actions</h2>
+            <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;'>Navigate to key system modules</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -574,9 +568,9 @@ def render_home_page():
     
     with action_col2:
         st.markdown("""
-        <div style='margin-bottom: 1.5rem;'>
-            <h2 style='margin: 0; font-size: 1.75rem;'>🔔 Recent Activity</h2>
-            <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary);'>Latest system events and updates</p>
+        <div style='margin-bottom: 1rem;'>
+            <h2 style='margin: 0; font-size: 1.5rem;'>🔔 Recent Activity</h2>
+            <p style='margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;'>Latest system events and updates</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -610,7 +604,7 @@ def render_home_page():
     with footer_col1:
         st.markdown("""
         <div class='modern-card'>
-            <h3 style='font-size: 1.125rem; margin: 0 0 1rem 0;'>🎯 System Status</h3>
+<h3 style='font-size: 1.1rem; margin: 0 0 0.75rem 0;'>🎯 System Status</h3>
             <div style='display: flex; flex-direction: column; gap: 0.5rem;'>
                 <div style='display: flex; justify-content: space-between;'>
                     <span style='color: var(--text-secondary);'>Database</span>
@@ -631,7 +625,7 @@ def render_home_page():
     with footer_col2:
         st.markdown("""
         <div class='modern-card'>
-            <h3 style='font-size: 1.125rem; margin: 0 0 1rem 0;'>📊 Today's Summary</h3>
+<h3 style='font-size: 1.1rem; margin: 0 0 0.75rem 0;'>📊 Today's Summary</h3>
             <div style='display: flex; flex-direction: column; gap: 0.5rem;'>
                 <div style='display: flex; justify-content: space-between;'>
                     <span style='color: var(--text-secondary);'>Bills Processed</span>
@@ -652,7 +646,7 @@ def render_home_page():
     with footer_col3:
         st.markdown("""
         <div class='modern-card'>
-            <h3 style='font-size: 1.125rem; margin: 0 0 1rem 0;'>🔗 Quick Links</h3>
+<h3 style='font-size: 1.1rem; margin: 0 0 0.75rem 0;'>🔗 Quick Links</h3>
             <div style='display: flex; flex-direction: column; gap: 0.5rem;'>
                 <a href='docs/' style='color: var(--accent-purple); text-decoration: none; transition: all 0.2s;' onmouseover='this.style.color="#9d6fff"' onmouseout='this.style.color="#8b5cf6"'>📚 Documentation →</a>
                 <a href='#' style='color: var(--accent-purple); text-decoration: none; transition: all 0.2s;' onmouseover='this.style.color="#9d6fff"' onmouseout='this.style.color="#8b5cf6"'>🔌 API Reference →</a>
@@ -667,7 +661,7 @@ def render_home_page():
     with st.expander("🛠️ Development Info & Settings"):
         st.markdown("""
         <div class='modern-card' style='background: var(--hover-subtle);'>
-            <h4 style='margin: 0 0 1rem 0; color: var(--accent-purple);'>Development Mode Active</h4>
+<h4 style='margin: 0 0 0.75rem 0; color: var(--accent-purple);'>Development Mode Active</h4>
             <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;'>
                 <div>
                     <div style='color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem;'>✅ Enabled Features</div>
