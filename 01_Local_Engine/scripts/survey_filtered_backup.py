@@ -427,18 +427,19 @@ def main():
         df_master = pd.DataFrame(MASTER_DATA)
         df_master.insert(0, "Sr#", range(1, len(df_master) + 1))
         
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        # Use fixed filename instead of timestamped one
+        fixed_name = "SARGODHA_SURVEY_MASTER"
         
         # Sort by Survey Date if available
         if "Survey Date" in df_master.columns:
              df_master.sort_values(by=["Survey Date", "Survey Time"], ascending=False, inplace=True)
         
         # Create Excel file with clickable links
-        excel_filename = os.path.join(OUTPUT_FOLDER, f"SARGODHA_SURVEY_MASTER_{num_pages}Pages_{timestamp}.xlsx")
+        excel_filename = os.path.join(OUTPUT_FOLDER, f"{fixed_name}.xlsx")
         df_master.to_excel(excel_filename, index=False)
         
         # Create CSV file with separate image URL columns and no clickable links
-        csv_filename = os.path.join(OUTPUT_FOLDER, f"SARGODHA_SURVEY_MASTER_{num_pages}Pages_{timestamp}.csv")
+        csv_filename = os.path.join(OUTPUT_FOLDER, f"{fixed_name}.csv")
         
         # Remove clickable link columns for CSV and exclude the combined "Image URLs" column
         csv_columns = [col for col in df_master.columns if not col.startswith("Clickable Image") and col != "Image URLs"]
@@ -449,7 +450,18 @@ def main():
         other_columns = [col for col in csv_columns if not col.startswith("Image URL")]
         reordered_columns = other_columns + image_url_columns
         df_csv = df_csv[reordered_columns]        
-        df_csv.to_csv(csv_filename, index=False, encoding='utf-8-sig')
+        
+        # Add error handling for file writing
+        try:
+            df_csv.to_csv(csv_filename, index=False, encoding='utf-8-sig')
+        except PermissionError:
+            print(f"⚠️ Permission denied when writing CSV file: {csv_filename}")
+            print("   Please close any applications that might be using this file and try again.")
+            print("   Common causes: Excel has the file open, or Google Drive is syncing the file.")
+            return
+        except Exception as e:
+            print(f"⚠️ Error writing CSV file: {e}")
+            return
         
         elapsed_global = round((time.time() - start_time_global) / 60, 2)
         

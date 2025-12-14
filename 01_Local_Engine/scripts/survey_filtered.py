@@ -301,16 +301,10 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
                     house_value = v.strip().lower()
                     if house_value in ["house", "flat", "home"]:
                         consumer_type = "Domestic"
-                    elif house_value == "":
-                        # If house type is empty, check the type field for commercial indicators
-                        pass  # Will be handled by type field logic below
                     else:
                         consumer_type = "Commercial"
                 elif k.lower().strip() == "type" and v.strip().lower() not in ["", "house", "residential"]:
-                    # If type field contains shop details, classify as Commercial
-                    type_value = v.strip().lower()
-                    if any(keyword in type_value for keyword in ["shop", "store", "business", "commercial"]):
-                        consumer_type = "Commercial"
+                    consumer_type = "Commercial"  # If type field exists and is not residential, it's commercial
             else:
                 flat["Additional Info"] = flat.get("Additional Info", "") + " " + part.strip()
     
