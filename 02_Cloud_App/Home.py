@@ -46,6 +46,8 @@ def inject_custom_css():
         --accent-red: #ef4444;
         --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #764ba2 100%);
         --gradient-card: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        /* Border styles */
+        --border-radius: 12px;
         --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
         --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -79,8 +81,7 @@ def inject_custom_css():
     [data-testid="stMetric"] {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-left: 4px solid var(--accent-primary-light);
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         padding: 1rem;
         box-shadow: var(--shadow-md);
         transition: all 0.2s ease;
@@ -88,7 +89,6 @@ def inject_custom_css():
     
     [data-testid="stMetric"]:hover {
         background: var(--hover-subtle-light);
-        border-left-color: var(--accent-primary-lighter);
         box-shadow: var(--shadow-md);
     }
     
@@ -134,8 +134,7 @@ def inject_custom_css():
     .streamlit-expanderHeader {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-left: 4px solid var(--accent-primary-light);
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         color: var(--text-primary) !important;
         font-weight: 600;
         padding: 1rem;
@@ -156,8 +155,7 @@ def inject_custom_css():
     .stAlert {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-left: 4px solid var(--accent-primary-light);
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         padding: 1rem;
     }
     
@@ -210,8 +208,7 @@ def inject_custom_css():
     .modern-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-left: 4px solid var(--accent-primary-light);
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         padding: 1.25rem;
         box-shadow: var(--shadow-md);
         transition: all 0.3s ease;
@@ -219,7 +216,6 @@ def inject_custom_css():
     
     .modern-card:hover {
         background: var(--hover-subtle-light);
-        border-left-color: var(--accent-primary-lighter);
         box-shadow: var(--shadow-lg);
     }
     
@@ -227,8 +223,7 @@ def inject_custom_css():
     .activity-item {
         background: var(--bg-tertiary);
         border: 1px solid var(--border-color);
-        border-left: 3px solid var(--accent-primary-light);
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         padding: 1rem;
         margin-bottom: 0.75rem;
         transition: all 0.2s ease;
@@ -237,7 +232,6 @@ def inject_custom_css():
     .activity-item:hover {
         background: var(--hover-subtle-light);
         transform: translateX(4px);
-        border-left-color: var(--accent-primary-lighter);
     }
     
     /* Compact Header Panel */
@@ -538,7 +532,7 @@ def render_home_page():
         """, unsafe_allow_html=True)
         
         st.markdown("""
-        <div class='modern-card' style='background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;'>
+        <div class='modern-card' style='background: rgba(59, 130, 246, 0.1);'>
             <div style='display: flex; align-items: center; gap: 0.75rem;'>
                 <div style='font-size: 1.5rem;'>📌</div>
                 <div>
