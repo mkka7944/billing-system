@@ -370,9 +370,9 @@ def render_home_page():
         # Fetch real data from database
         try:
             if repository:
-                bills_df = repository.fetch_data("bills", columns="id, payment_status, amount_due, created_at")
+                bills_df = repository.fetch_data("bills", columns="psid, payment_status, amount_due, uploaded_at")
                 staff_df = repository.fetch_data("staff", columns="id, is_active, role")
-                tickets_df = repository.fetch_data("tickets", columns="ticket_id, status, priority")
+                tickets_df = repository.fetch_data("tickets", columns="ticket_id, status")
             else:
                 # Use empty dataframes if repository not available
                 bills_df = pd.DataFrame()
