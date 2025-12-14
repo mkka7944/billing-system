@@ -49,6 +49,10 @@ def inject_custom_css():
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
         --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
         --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+        /* Subtle hover effect colors */
+        --hover-subtle: rgba(139, 92, 246, 0.1);
+        --hover-subtle-blue: rgba(59, 130, 246, 0.1);
+        --hover-subtle-green: rgba(16, 185, 129, 0.1);
     }
     
     /* Main App Background */
@@ -134,6 +138,10 @@ def inject_custom_css():
         padding: 1rem;
     }
     
+    .streamlit-expanderHeader:hover {
+        background: var(--hover-subtle);
+    }
+    
     .streamlit-expanderContent {
         background: var(--bg-tertiary);
         border: 1px solid var(--border-color);
@@ -148,6 +156,10 @@ def inject_custom_css():
         border-radius: 12px;
         border-left: 4px solid var(--accent-blue);
         padding: 1rem;
+    }
+    
+    .stAlert:hover {
+        background: var(--hover-subtle-blue);
     }
     
     /* Dataframe/Tables */
@@ -202,6 +214,7 @@ def inject_custom_css():
     }
     
     .modern-card:hover {
+        background: var(--hover-subtle);
         border-color: var(--accent-purple);
         box-shadow: var(--shadow-lg);
     }
@@ -218,7 +231,7 @@ def inject_custom_css():
     }
     
     .activity-item:hover {
-        background: var(--bg-card);
+        background: var(--hover-subtle);
         transform: translateX(4px);
         border-left-color: var(--accent-blue);
     }
@@ -316,44 +329,37 @@ def main():
 def render_home_page():
     """Modern dark-themed home page with sleek design"""
     
-    # Modern Header with Animated Gradient
+    # Consolidated Header with User Info and Time/Date
     st.markdown("""
     <div class='header-gradient'>
-        <h1>🇵🇰 Suthra Punjab Operations Center</h1>
-        <p>Waste Management & Billing System</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Modern Welcome Section with Cards
-    st.markdown("""
-    <div class='modern-card' style='margin-bottom: 2rem;'>
-        <h2 style='margin: 0 0 0.5rem 0;'>Welcome back, <span style='background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700;'>{}</span>! 👋</h2>
-        <p style='margin: 0; color: var(--text-secondary);'>Role: <strong style='color: var(--accent-purple);'>{}</strong> | Location: <strong style='color: var(--accent-blue);'>{}</strong></p>
+        <div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;'>
+            <div>
+                <h1 style='margin: 0 0 0.5rem 0;'>🇵🇰 Suthra Punjab Operations Center</h1>
+                <p style='margin: 0;'>Waste Management & Billing System</p>
+            </div>
+            <div style='text-align: right;'>
+                <div style='font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;'>Welcome, <span style='background: linear-gradient(135deg, #ffffff, #e0e0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>{}</span>!</div>
+                <div style='font-size: 0.9rem; margin-bottom: 0.5rem;'>Role: <strong style='color: #d0c0ff;'>{}</strong> | Location: <strong style='color: #c0d0ff;'>{}</strong></div>
+                <div style='display: flex; gap: 1rem; justify-content: flex-end;'>
+                    <div style='background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 8px;'>
+                        <div style='font-size: 0.75rem; opacity: 0.8;'>CURRENT TIME</div>
+                        <div style='font-size: 1.1rem; font-weight: 600;'>⏰ {}</div>
+                    </div>
+                    <div style='background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 8px;'>
+                        <div style='font-size: 0.75rem; opacity: 0.8;'>TODAY'S DATE</div>
+                        <div style='font-size: 1.1rem; font-weight: 600;'>📅 {}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     """.format(
         st.session_state.get('user_name', 'User'),
         st.session_state.get('user_role', 'N/A').upper(),
-        st.session_state.get('assigned_city', 'N/A')
+        st.session_state.get('assigned_city', 'N/A'),
+        datetime.now().strftime("%I:%M %p"),
+        datetime.now().strftime("%b %d, %Y")
     ), unsafe_allow_html=True)
-    
-    # Time & Date Row
-    time_col1, time_col2 = st.columns(2)
-    with time_col1:
-        current_time = datetime.now().strftime("%I:%M %p")
-        st.markdown(f"""
-        <div class='modern-card'>
-            <div style='font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;'>CURRENT TIME</div>
-            <div style='font-size: 2rem; font-weight: 700; color: var(--text-primary);'>⏰ {current_time}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with time_col2:
-        current_date = datetime.now().strftime("%B %d, %Y")
-        st.markdown(f"""
-        <div class='modern-card'>
-            <div style='font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;'>TODAY'S DATE</div>
-            <div style='font-size: 2rem; font-weight: 700; color: var(--text-primary);'>📅 {current_date}</div>
-        </div>
-        """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -660,7 +666,7 @@ def render_home_page():
     # Modern Development Info
     with st.expander("🛠️ Development Info & Settings"):
         st.markdown("""
-        <div class='modern-card' style='background: rgba(139, 92, 246, 0.05);'>
+        <div class='modern-card' style='background: var(--hover-subtle);'>
             <h4 style='margin: 0 0 1rem 0; color: var(--accent-purple);'>Development Mode Active</h4>
             <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;'>
                 <div>
