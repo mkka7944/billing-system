@@ -188,8 +188,13 @@ def extract_records_from_response(data):
     if not data: return []
     payload = data.get("data", data)
     if isinstance(payload, dict):
-        for key in ("listings", "items", "records", "data"):
+        # First check for the known path 'listings' which is where survey data is located
+        if isinstance(payload.get("listings"), list): return payload["listings"]
+        
+        # Then check other possible keys
+        for key in ("items", "records", "data"):
             if isinstance(payload.get(key), list): return payload[key]
+        
         # If we didn't find any of the expected keys, let's check all keys
         for key, value in payload.items():
             if isinstance(value, list) and len(value) > 0:
@@ -197,6 +202,138 @@ def extract_records_from_response(data):
                 if isinstance(value[0], dict) and ('id' in value[0] or 'survey_id' in value[0]):
                     return value
     return payload if isinstance(payload, list) else []
+
+# -----------------------------
+# NEW FUNCTION TO GET TOTAL RECORDS COUNT
+# -----------------------------
+def get_total_records_count(session, district_id, tehsil_id):
+    """Get the total number of records available for a district/tehsil combination"""
+    try:
+        # Request just the first page with a small size (10) to quickly get pagination info
+        data = fetch_survey_page(session, 1, 10, district_id, tehsil_id)
+        if data and isinstance(data, dict):
+            # Look for pagination info in various possible locations in the response
+            payload = data.get("data", data)
+            if isinstance(payload, dict):
+                # Check for totalInDB field which contains the total record count
+                if "totalInDB" in payload:
+                    return payload["totalInDB"]
+                
+                # Check for pagination information first
+                if "pagination" in payload and isinstance(payload["pagination"], dict):
+                    pagination = payload["pagination"]
+                    # Look for totalPages or similar pagination info
+                    for key in ("totalPages", "total_pages", "lastPage", "last_page"):
+                        if key in pagination:
+                            total_pages = pagination[key]
+                            # Calculate total records based on pages and page size
+                            return total_pages * PAGE_SIZE
+                    
+                    # Look for total records count directly
+                    for key in ("total", "count", "totalCount", "recordCount", "total_records"):
+                        if key in pagination:
+                            return pagination[key]
+                        
+                # Check for total count in the main payload
+                for key in ("total", "count", "totalCount", "recordCount", "total_records"):
+                    if key in payload:
+                        return payload[key]
+                        
+    except Exception as e:
+        print(f"   ⚠️ Could not determine total records: {e}")
+    return None
+
+def process_district_tehsil_combination(session, district_id, tehsil_id, district_name, tehsil_name, num_pages, fetch_all=False):
+    """Process a single district/tehsil combination and return the data"""
+    first_page_data = None
+    first_page_records = None
+    
+    if fetch_all:
+        print(f"\n🚀 FETCHING ALL DATA FROM {district_name.upper()} DISTRICT/{tehsil_name.upper()} TEHSIL...")
+        # Try to determine total records/pages
+        total_records = get_total_records_count(session, district_id, tehsil_id)
+        if total_records:
+            # Calculate required pages (rounding up)
+            calculated_pages = (total_records + PAGE_SIZE - 1) // PAGE_SIZE
+            print(f"   📊 Total records available: {total_records} ({calculated_pages} pages needed)")
+            num_pages = calculated_pages
+        else:
+            print(f"   ⚠️ Could not determine total records. Will fetch pages dynamically until no more data.")
+            # Fetch first page to check pagination info
+            first_page_data = fetch_survey_page(session, 1, PAGE_SIZE, district_id, tehsil_id)
+            first_page_records = extract_records_from_response(first_page_data)
+            
+            if not first_page_records:
+                print(f"   ⚠️ No records found on first page.")
+                return []
+            
+            # Try to get pagination info from first page
+            total_pages = None
+            if first_page_data and isinstance(first_page_data, dict):
+                payload = first_page_data.get("data", first_page_data)
+                if isinstance(payload, dict) and "pagination" in payload:
+                    pagination = payload["pagination"]
+                    for key in ("totalPages", "total_pages", "lastPage", "last_page"):
+                        if key in pagination:
+                            total_pages = pagination[key]
+                            break
+            
+            if total_pages:
+                print(f"   📊 Total pages available: {total_pages}")
+                num_pages = total_pages
+            else:
+                # If we still can't determine total pages, we'll fetch incrementally
+                print(f"   ⚠️ Could not determine total pages. Will fetch incrementally until no more data.")
+                num_pages = 1000  # Reasonable upper limit for incremental fetching
+    else:
+        print(f"\n🚀 FETCHING DATA FROM {district_name.upper()} DISTRICT/{tehsil_name.upper()} TEHSIL FOR {num_pages} PAGES...\n")
+    
+    area_records_raw = []
+    
+    # Fetch specified number of pages
+    print(f"   📥 Fetching up to {num_pages} pages of data...")
+    total_records_fetched = 0
+    
+    # Create a progress bar for pages
+    with tqdm(total=num_pages, desc="   📄 Fetching pages", leave=True) as page_bar:
+        for page in range(1, num_pages + 1):
+            page_bar.set_description(f"   📄 Fetching page {page}/{num_pages}")
+            
+            # Use first page data if we already fetched it for pagination info
+            if fetch_all and page == 1 and first_page_records:
+                recs = first_page_records
+            else:
+                data = fetch_survey_page(session, page, PAGE_SIZE, district_id, tehsil_id)
+                recs = extract_records_from_response(data)
+            
+            if not recs: 
+                print(f"   ⚠️ No more records found on page {page}")
+                break
+            
+            area_records_raw.extend(recs)
+            total_records_fetched += len(recs)
+            page_bar.update(1)
+            time.sleep(0.2)
+    
+    print()  # New line after progress updates
+    
+    if not area_records_raw:
+        print(f"   ⚠️ No records found for {district_name} District/{tehsil_name} Tehsil.")
+        return []
+        
+    processed_area_data = []
+    for raw in area_records_raw:
+        # Extract location information from the record
+        uc_name = raw.get('sw_areas.uc_id.name', 'Unknown UC')
+        
+        flat_row = flatten_record(raw, district_name, tehsil_name, uc_name)
+        processed_area_data.append(flat_row)
+    
+    if not processed_area_data:
+        print(f"   ⚠️ No records found for {district_name} District/{tehsil_name} Tehsil.")
+        return []
+        
+    return processed_area_data
 
 # -----------------------------
 # DATA PROCESSOR (Deep Drill Logic)
@@ -316,52 +453,6 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
 # -----------------------------
 # MAIN WORKFLOW
 # -----------------------------
-def process_district_tehsil_combination(session, district_id, tehsil_id, district_name, tehsil_name, num_pages):
-    """Process a single district/tehsil combination and return the data"""
-    print(f"\n🚀 FETCHING DATA FROM {district_name.upper()} DISTRICT/{tehsil_name.upper()} TEHSIL FOR {num_pages} PAGES...\n")
-    
-    area_records_raw = []
-    
-    # Fetch specified number of pages
-    print(f"   📥 Fetching {num_pages} pages of data...")
-    total_records_fetched = 0
-    
-    # Create a progress bar for pages
-    with tqdm(total=num_pages, desc="   📄 Fetching pages", leave=True) as page_bar:
-        for page in range(1, num_pages + 1):
-            page_bar.set_description(f"   📄 Fetching page {page}/{num_pages}")
-            
-            data = fetch_survey_page(session, page, PAGE_SIZE, district_id, tehsil_id)
-            recs = extract_records_from_response(data)
-            
-            if not recs: 
-                print(f"   ⚠️ No more records found on page {page}")
-                break
-            
-            area_records_raw.extend(recs)
-            total_records_fetched += len(recs)
-            page_bar.update(1)
-            time.sleep(0.2)
-    
-    print()  # New line after progress updates
-    
-    if not area_records_raw:
-        print(f"   ⚠️ No records found for {district_name} District/{tehsil_name} Tehsil.")
-        return []
-        
-    processed_area_data = []
-    for raw in area_records_raw:
-        # Extract location information from the record
-        uc_name = raw.get('sw_areas.uc_id.name', 'Unknown UC')
-        
-        flat_row = flatten_record(raw, district_name, tehsil_name, uc_name)
-        processed_area_data.append(flat_row)
-    
-    if not processed_area_data:
-        print(f"   ⚠️ No records found for {district_name} District/{tehsil_name} Tehsil.")
-        return []
-        
-    return processed_area_data
 
 def save_data_to_files(data, district_name, tehsil_name):
     """Save data to separate Excel and CSV files"""
@@ -425,16 +516,29 @@ def main():
         print("❌ Error: Could not read areas data")
         return
     
-    # Get the number of pages to fetch
-    pages_input = input("Enter number of pages to fetch (e.g., 5 for 1250 records): ").strip()
-    try:
-        num_pages = int(pages_input)
-        if num_pages <= 0:
-            print("Invalid number of pages. Using default of 5 pages.")
+    # Get user choice for download mode
+    print("Download Options:")
+    print("1. Download specific number of pages")
+    print("2. Download ALL available data")
+    choice = input("Select option (1 or 2): ").strip()
+    
+    fetch_all = False
+    num_pages = 5  # Default
+    
+    if choice == "2":
+        fetch_all = True
+        print("Selected: Download ALL available data")
+    else:
+        # Get the number of pages to fetch
+        pages_input = input("Enter number of pages to fetch (e.g., 5 for 1250 records): ").strip()
+        try:
+            num_pages = int(pages_input)
+            if num_pages <= 0:
+                print("Invalid number of pages. Using default of 5 pages.")
+                num_pages = 5
+        except ValueError:
+            print("Invalid input. Using default of 5 pages.")
             num_pages = 5
-    except ValueError:
-        print("Invalid input. Using default of 5 pages.")
-        num_pages = 5
 
     session = do_login()
     
@@ -453,7 +557,7 @@ def main():
         
         # Process this combination
         processed_data = process_district_tehsil_combination(
-            session, district_id, tehsil_id, district_name, tehsil_name, num_pages)
+            session, district_id, tehsil_id, district_name, tehsil_name, num_pages, fetch_all)
         
         # Save separate files for this combination
         save_data_to_files(processed_data, district_name, tehsil_name)
@@ -509,8 +613,11 @@ def main():
         
         print("\n" + "="*50)
         print("🎉 MISSION ACCOMPLISHED")
-        print(f"📄 Grand Total Records: {len(all_processed_data)}")
-        print(f"📄 Pages Fetched:       {num_pages} pages ({PAGE_SIZE} records per page)")
+        if fetch_all:
+            print(f"📄 Grand Total Records: {len(all_processed_data)} (ALL available data downloaded)")
+        else:
+            print(f"📄 Grand Total Records: {len(all_processed_data)}")
+            print(f"📄 Pages Fetched:       {num_pages} pages ({PAGE_SIZE} records per page)")
         print(f"💾 MASTER EXCEL FILE:   {excel_filename}")
         print(f"💾 MASTER CSV FILE:     {csv_filename}")
         print("="*50)
