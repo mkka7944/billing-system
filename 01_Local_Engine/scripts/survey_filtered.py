@@ -399,6 +399,10 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
     # Initialize consumer type as domestic by default
     consumer_type = "Domestic"
     
+    # Track if we have house type and type fields
+    house_type_value = ""
+    type_value = ""
+    
     # Case A: Dictionary (Ideal)
     if isinstance(answers, dict):
         for k, v in answers.items():
@@ -407,43 +411,46 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
             if isinstance(v, (dict, list)): v = str(v)
             flat[clean_key] = str(v).strip()
             
-            # Determine consumer type based on house type or type field
+            # Capture house type and type field values for consumer classification
             if k.lower() == "house type":
-                # Check if house type value is house/flat for domestic classification
-                house_value = str(v).strip().lower()
-                if house_value in ["house", "flat", "home"]:
-                    consumer_type = "Domestic"
-                elif house_value == "":
-                    # If house type is empty, check the type field for commercial indicators
-                    pass  # Will be handled by type field logic below
-                else:
-                    consumer_type = "Commercial"
-            elif k.lower() == "type" and str(v).strip().lower() not in ["", "house", "residential"]:
-                # If type field contains shop details, classify as Commercial
+                house_type_value = str(v).strip()
+            elif k.lower() == "type":
                 type_value = str(v).strip().lower()
-                if any(keyword in type_value for keyword in ["shop", "store", "business", "commercial"]):
-                    consumer_type = "Commercial"
+                
+        # Apply the simplified consumer type logic:
+        # - If House Type field is empty -> Commercial
+        # - If House Type field contains any value -> Domestic
+        if house_type_value == '' or house_type_value.lower() == 'nan' or house_type_value.lower() == 'none':
+            consumer_type = "Commercial"
+        else:
+            consumer_type = "Domestic"
                 
     # Case B: Pipe Separated String (Legacy)
     elif isinstance(answers, str) and "|" in answers:
         parts = answers.split("|")
+        house_type_value = ""
+        type_value = ""
+        
         for part in parts:
             if ":" in part:
                 k, v = part.split(":", 1)
                 flat[k.strip()] = v.strip()
                 
-                # Determine consumer type based on house type or type field
+                # Capture house type and type field values for consumer classification
                 if k.lower().strip() == "house type":
-                    # Check if house type value is house/flat for domestic classification
-                    house_value = v.strip().lower()
-                    if house_value in ["house", "flat", "home"]:
-                        consumer_type = "Domestic"
-                    else:
-                        consumer_type = "Commercial"
-                elif k.lower().strip() == "type" and v.strip().lower() not in ["", "house", "residential"]:
-                    consumer_type = "Commercial"  # If type field exists and is not residential, it's commercial
+                    house_type_value = v.strip()
+                elif k.lower().strip() == "type":
+                    type_value = v.strip().lower()
             else:
                 flat["Additional Info"] = flat.get("Additional Info", "") + " " + part.strip()
+                
+        # Apply the simplified consumer type logic:
+        # - If House Type field is empty -> Commercial
+        # - If House Type field contains any value -> Domestic
+        if house_type_value == '' or house_type_value.lower() == 'nan' or house_type_value.lower() == 'none':
+            consumer_type = "Commercial"
+        else:
+            consumer_type = "Domestic"
     
     # Add the consumer type column
     flat["Consumer Type"] = consumer_type
