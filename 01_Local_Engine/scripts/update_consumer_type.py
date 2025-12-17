@@ -10,7 +10,6 @@ import pandas as pd
 import os
 import glob
 from pathlib import Path
-import openpyxl
 
 # Define the input/output folder
 INPUT_FOLDER = os.path.join("..", "outputs", "scraped_data")
@@ -62,7 +61,8 @@ def process_file(file_path):
         if file_path.endswith('.csv'):
             df.to_csv(output_path, index=False, encoding='utf-8-sig')
         elif file_path.endswith('.xlsx'):
-            df.to_excel(output_path, index=False, engine='openpyxl')
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Survey Data')
         
         print(f"Saved updated file to {output_path}")
         print(f"  - Total records: {len(df)}")
