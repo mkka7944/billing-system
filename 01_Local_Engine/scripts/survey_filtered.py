@@ -412,9 +412,9 @@ def flatten_record(rec, district_name, tehsil_name, uc_name):
             flat[clean_key] = str(v).strip()
             
             # Capture house type and type field values for consumer classification
-            if k.lower() == "house type":
+            if clean_key.lower() == "house type":
                 house_type_value = str(v).strip()
-            elif k.lower() == "type":
+            elif clean_key.lower() == "type":
                 type_value = str(v).strip().lower()
                 
         # Apply the simplified consumer type logic:
