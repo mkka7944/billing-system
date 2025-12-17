@@ -71,14 +71,21 @@ def recreate_clickable_links(df):
     if 'Image URL 1' not in df.columns:
         return df
     
+    # Ensure clickable image columns exist and have string dtype
+    for i in range(3):
+        clickable_col = f"Clickable Image {i+1}"
+        if clickable_col not in df.columns:
+            df[clickable_col] = ""
+        else:
+            # Convert to string dtype to avoid issues with HYPERLINK formulas
+            df[clickable_col] = df[clickable_col].astype(str)
+            # Replace 'nan' strings with empty strings
+            df[clickable_col] = df[clickable_col].replace('nan', '')
+    
     # Create separate clickable link columns for up to 3 images (for Excel only)
     for i in range(3):
         clickable_col = f"Clickable Image {i+1}"
         url_col = f"Image URL {i+1}"
-        
-        # If the clickable column doesn't exist, create it
-        if clickable_col not in df.columns:
-            df[clickable_col] = ""
         
         # Recreate clickable links for each row
         for idx, row in df.iterrows():
