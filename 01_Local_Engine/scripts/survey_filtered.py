@@ -480,7 +480,8 @@ def save_data_to_files(data, district_name, tehsil_name):
     
     # Create Excel file with clickable links
     excel_filename = os.path.join(OUTPUT_FOLDER, f"{filename_base}.xlsx")
-    df.to_excel(excel_filename, index=False)
+    with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name=f'{district_name} {tehsil_name} Survey Data')
     
     # Create CSV file with separate image URL columns and no clickable links
     csv_filename = os.path.join(OUTPUT_FOLDER, f"{filename_base}.csv")
@@ -591,7 +592,8 @@ def main():
         
         # Create Excel file with clickable links
         excel_filename = os.path.join(OUTPUT_FOLDER, f"{fixed_name}.xlsx")
-        df_master.to_excel(excel_filename, index=False)
+        with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
+            df_master.to_excel(writer, index=False, sheet_name='All Districts Tehsils Survey Data')
         
         # Create CSV file with separate image URL columns and no clickable links
         csv_filename = os.path.join(OUTPUT_FOLDER, f"{fixed_name}.csv")
