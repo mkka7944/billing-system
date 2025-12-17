@@ -4,16 +4,53 @@ Script to update consumer type classification in existing CSV/Excel files
 based on the simplified logic:
 - If House Type field is empty -> Commercial
 - If House Type field contains any value -> Domestic
+
+This script also preserves clickable image links in Excel files by recreating them after updating the consumer type.
 """
 
 import pandas as pd
 import os
 import glob
 from pathlib import Path
+import re
+from urllib.parse import urljoin
 
 # Define the input/output folder
 INPUT_FOLDER = os.path.join("..", "outputs", "scraped_data")
 OUTPUT_FOLDER = os.path.join("..", "outputs", "scraped_data_updated")
+
+# Constants for URL building
+BASE_HOST = "https://suthra.punjab.gov.pk"
+
+# Helper functions for clickable links
+def build_full_attachment_url(fragment):
+    """Build full URL from fragment"""
+    if not fragment: return None
+    fragment = fragment.strip().replace('public//', 'public/')
+    if fragment.startswith(("http://", "https://")):
+        return fragment
+    return urljoin(BASE_HOST, f"/suthra-punjab/backend/public{fragment}")
+
+def extract_attachment_urls_from_record(rec):
+    """Extract attachment URLs from a record"""
+    urls = []
+    att_field = rec.get("attachment") or rec.get("new_str") or ""
+    if isinstance(att_field, str):
+        hrefs = re.findall(r"href=['\"](.*?)['\"]", att_field)
+        if hrefs:
+            for h in hrefs: urls.append(build_full_attachment_url(h))
+        else:
+            parts = [p.strip() for p in att_field.split(",") if p.strip()]
+            for p in parts: urls.append(build_full_attachment_url(p))
+    return [u for u in urls if u]
+
+def create_clickable_link(url, link_text="View Image"):
+    """Create Excel clickable hyperlink formula"""
+    if not url:
+        return ""
+    # Escape any quotes in the URL
+    escaped_url = url.replace('"', '""')
+    return f'=HYPERLINK("{escaped_url}", "{link_text}")'
 
 def update_consumer_type_logic(row):
     """
@@ -27,6 +64,30 @@ def update_consumer_type_logic(row):
         return 'Commercial'
     else:
         return 'Domestic'
+
+def recreate_clickable_links(df):
+    """Recreate clickable image links in the dataframe"""
+    # Check if we have the necessary columns to recreate links
+    if 'Image URL 1' not in df.columns:
+        return df
+    
+    # Create separate clickable link columns for up to 3 images (for Excel only)
+    for i in range(3):
+        clickable_col = f"Clickable Image {i+1}"
+        url_col = f"Image URL {i+1}"
+        
+        # If the clickable column doesn't exist, create it
+        if clickable_col not in df.columns:
+            df[clickable_col] = ""
+        
+        # Recreate clickable links for each row
+        for idx, row in df.iterrows():
+            if url_col in row and pd.notna(row[url_col]) and row[url_col]:
+                df.at[idx, clickable_col] = create_clickable_link(row[url_col], f"Image {i+1}")
+            else:
+                df.at[idx, clickable_col] = ""
+    
+    return df
 
 def process_file(file_path):
     """Process a single CSV or Excel file and update consumer types"""
@@ -52,6 +113,10 @@ def process_file(file_path):
     
     # Apply the new consumer type logic
     df['Consumer Type'] = df.apply(update_consumer_type_logic, axis=1)
+    
+    # If this is an Excel file, recreate clickable links
+    if file_path.endswith('.xlsx'):
+        df = recreate_clickable_links(df)
     
     # Save the updated file
     output_path = file_path.replace(INPUT_FOLDER, OUTPUT_FOLDER)
