@@ -321,6 +321,29 @@ def generate_html_map(data_by_location, output_file):
             -webkit-user-select: none;
         }
         
+        .rotate-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            z-index: 2001;
+        }
+        
+        .rotate-btn {
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .rotate-btn:hover {
+            background: rgba(0,0,0,0.8);
+        }
+        
         .next {
             right: 0;
             border-radius: 3px 0 0 3px;
@@ -526,6 +549,12 @@ def generate_html_map(data_by_location, output_file):
             <img class="modal-image" id="modalImage" src="" alt="">
             <div class="image-counter" id="imageCounter"></div>
             <div class="thumbnail-strip" id="thumbnailStrip"></div>
+        </div>
+        <!-- Rotation Controls -->
+        <div class="rotate-controls">
+            <button class="rotate-btn" onclick="rotateImage(-90)">↺ Rotate Left</button>
+            <button class="rotate-btn" onclick="rotateImage(90)">↻ Rotate Right</button>
+            <button class="rotate-btn" onclick="resetRotation()">Reset</button>
         </div>
     </div>
     
@@ -1046,10 +1075,12 @@ def generate_html_map(data_by_location, output_file):
         // Image Viewer Functions
         var currentImageUrls = [];
         var currentImageIndex = 0;
+        var currentRotation = 0;
         
         function openImageViewer(imageUrls, startIndex) {
             currentImageUrls = imageUrls;
             currentImageIndex = startIndex || 0;
+            currentRotation = 0; // Reset rotation when opening new viewer
             
             var modal = document.getElementById('imageModal');
             var modalImg = document.getElementById('modalImage');
@@ -1058,6 +1089,7 @@ def generate_html_map(data_by_location, output_file):
             
             // Set current image
             modalImg.src = currentImageUrls[currentImageIndex];
+            modalImg.style.transform = 'rotate(0deg)'; // Reset rotation
             
             // Update counter
             counter.textContent = (currentImageIndex + 1) + ' / ' + currentImageUrls.length;
@@ -1094,6 +1126,7 @@ def generate_html_map(data_by_location, output_file):
             modal.style.display = 'none';
             currentImageUrls = [];
             currentImageIndex = 0;
+            currentRotation = 0;
         }
         
         function changeImage(direction) {
@@ -1119,6 +1152,10 @@ def generate_html_map(data_by_location, output_file):
             // Update image
             modalImg.src = currentImageUrls[currentImageIndex];
             
+            // Reset rotation for new image
+            currentRotation = 0;
+            modalImg.style.transform = 'rotate(0deg)';
+            
             // Update counter
             counter.textContent = (currentImageIndex + 1) + ' / ' + currentImageUrls.length;
             
@@ -1129,6 +1166,23 @@ def generate_html_map(data_by_location, output_file):
                     thumbnails[i].classList.add('active');
                 }
             }
+        }
+        
+        // Image Rotation Functions
+        function rotateImage(degrees) {
+            var modalImg = document.getElementById('modalImage');
+            if (!modalImg) return;
+            
+            currentRotation = (currentRotation + degrees) % 360;
+            modalImg.style.transform = 'rotate(' + currentRotation + 'deg)';
+        }
+        
+        function resetRotation() {
+            var modalImg = document.getElementById('modalImage');
+            if (!modalImg) return;
+            
+            currentRotation = 0;
+            modalImg.style.transform = 'rotate(0deg)';
         }
         
         // Close modal when clicking outside
