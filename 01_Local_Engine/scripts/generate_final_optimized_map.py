@@ -178,6 +178,13 @@ def generate_html_map(data_by_location, output_file):
                 tehsil_commercial += commercial_count
                 
                 for record in records:
+                    # Collect all image URLs
+                    image_urls = []
+                    for i in range(1, 5):  # Image URL 1 through 4
+                        url = str(record.get(f'Image URL {i}', '')).strip()
+                        if url:
+                            image_urls.append(url)
+                    
                     survey_points.append({
                         'survey_id': str(record.get('Survey ID', '')),
                         'district': district,
@@ -187,7 +194,7 @@ def generate_html_map(data_by_location, output_file):
                         'house_type': str(record.get('House Type', '')).strip(),
                         'survey_date': str(record.get('Survey Date', '')).strip(),
                         'location': str(record.get('Location', '')).strip(),
-                        'image_url_1': str(record.get('Image URL 1', '')).strip(),
+                        'image_urls': image_urls,
                         'color': color
                     })
             
@@ -247,6 +254,122 @@ def generate_html_map(data_by_location, output_file):
             max-width: 320px;
             max-height: 85vh;
             overflow-y: auto;
+        }
+        
+        /* Image Viewer Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            overflow: hidden;
+        }
+        
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 0;
+            width: 90%;
+            max-width: 900px;
+            height: 90vh;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: center;
+        }
+        
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border: 2px solid white;
+        }
+        
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            color: #f1f1f1;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 2001;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+        }
+        
+        .prev, .next {
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            width: auto;
+            padding: 16px;
+            margin-top: -50px;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            transition: 0.6s ease;
+            border-radius: 0 3px 3px 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .next {
+            right: 0;
+            border-radius: 3px 0 0 3px;
+        }
+        
+        .prev:hover, .next:hover {
+            background-color: rgba(0,0,0,0.8);
+        }
+        
+        .image-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 5px;
+        }
+        
+        .thumbnail-strip {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            max-width: 80%;
+            overflow-x: auto;
+            padding: 5px;
+        }
+        
+        .thumbnail {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border: 2px solid transparent;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        
+        .thumbnail.active {
+            border-color: white;
+            opacity: 1;
+        }
+        
+        .thumbnail:hover {
+            opacity: 1;
         }
         .legend {
             background: white;
@@ -393,6 +516,18 @@ def generate_html_map(data_by_location, output_file):
 </head>
 <body>
     <div id="map"></div>
+    
+    <!-- Image Viewer Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeImageViewer()">&times;</span>
+        <a class="prev" onclick="changeImage(-1)">&#10094;</a>
+        <a class="next" onclick="changeImage(1)">&#10095;</a>
+        <div class="modal-content">
+            <img class="modal-image" id="modalImage" src="" alt="">
+            <div class="image-counter" id="imageCounter"></div>
+            <div class="thumbnail-strip" id="thumbnailStrip"></div>
+        </div>
+    </div>
     
     <div class="info">
         <div class="controls">
@@ -714,8 +849,8 @@ def generate_html_map(data_by_location, output_file):
                 
                 if (isNaN(lat) || isNaN(lng)) return false;
                 
-                // Create popup content with image thumbnail
-                var imageUrl = survey.image_url_1 || '';
+                // Create popup content with multiple image thumbnails
+                var imageUrls = survey.image_urls || [];
                 var popupContent = 
                     '<b>ID:</b> ' + survey.survey_id + '<br>' +
                     '<b>District:</b> ' + survey.district + '<br>' +
@@ -725,12 +860,27 @@ def generate_html_map(data_by_location, output_file):
                     '<b>House:</b> ' + survey.house_type + '<br>' +
                     '<b>Date:</b> ' + survey.survey_date;
                 
-                // Add image thumbnail if available
-                if (imageUrl && imageUrl.trim() !== '') {
-                    popupContent += '<br><div style="margin-top: 8px;"><b>Image:</b><br>' +
-                        '<a href="' + imageUrl + '" target="_blank">' +
-                        '<img src="' + imageUrl + '" style="max-width: 150px; max-height: 150px; border: 1px solid #ccc; cursor: pointer;" alt="Survey Image" title="Click to view full size">' +
-                        '</a></div>';
+                // Add image thumbnails if available
+                if (imageUrls.length > 0) {
+                    popupContent += '<br><div style="margin-top: 8px;"><b>Images (' + imageUrls.length + '):</b><br>';
+                    
+                    // Add thumbnails (up to 4 for performance)
+                    var maxThumbnails = Math.min(imageUrls.length, 4);
+                    for (var i = 0; i < maxThumbnails; i++) {
+                        var imageUrl = imageUrls[i];
+                        if (imageUrl && imageUrl.trim() !== '') {
+                            popupContent += '<div style="display: inline-block; margin: 2px;">' +
+                                '<img src="' + imageUrl + '" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ccc; cursor: pointer;" alt="Survey Image ' + (i+1) + '" title="Click to view" onclick="openImageViewer(' + JSON.stringify(imageUrls).replace(/"/g, '&quot;') + ', ' + i + ')">' +
+                                '</div>';
+                        }
+                    }
+                    
+                    // Add count indicator if there are more images
+                    if (imageUrls.length > 4) {
+                        popupContent += '<div style="font-size: 10px; color: #666; margin-top: 4px;">+' + (imageUrls.length - 4) + ' more images</div>';
+                    }
+                    
+                    popupContent += '</div>';
                 }
                 
                 // Get color for this MC/UC
@@ -890,6 +1040,119 @@ def generate_html_map(data_by_location, output_file):
                 legend.style.display = 'none';
                 controls.style.display = 'none';
                 btn.textContent = 'Expand Panel';
+            }
+        }
+        
+        // Image Viewer Functions
+        var currentImageUrls = [];
+        var currentImageIndex = 0;
+        
+        function openImageViewer(imageUrls, startIndex) {
+            currentImageUrls = imageUrls;
+            currentImageIndex = startIndex || 0;
+            
+            var modal = document.getElementById('imageModal');
+            var modalImg = document.getElementById('modalImage');
+            var counter = document.getElementById('imageCounter');
+            var thumbnailStrip = document.getElementById('thumbnailStrip');
+            
+            // Set current image
+            modalImg.src = currentImageUrls[currentImageIndex];
+            
+            // Update counter
+            counter.textContent = (currentImageIndex + 1) + ' / ' + currentImageUrls.length;
+            
+            // Create thumbnails
+            thumbnailStrip.innerHTML = '';
+            for (var i = 0; i < currentImageUrls.length; i++) {
+                var thumb = document.createElement('img');
+                thumb.className = 'thumbnail';
+                thumb.src = currentImageUrls[i];
+                thumb.alt = 'Thumbnail ' + (i + 1);
+                thumb.onclick = (function(index) {
+                    return function() {
+                        showImage(index);
+                    };
+                })(i);
+                
+                if (i === currentImageIndex) {
+                    thumb.classList.add('active');
+                }
+                
+                thumbnailStrip.appendChild(thumb);
+            }
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Close popup
+            map.closePopup();
+        }
+        
+        function closeImageViewer() {
+            var modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            currentImageUrls = [];
+            currentImageIndex = 0;
+        }
+        
+        function changeImage(direction) {
+            showImage(currentImageIndex + direction);
+        }
+        
+        function showImage(index) {
+            if (currentImageUrls.length === 0) return;
+            
+            // Normalize index
+            if (index >= currentImageUrls.length) {
+                currentImageIndex = 0;
+            } else if (index < 0) {
+                currentImageIndex = currentImageUrls.length - 1;
+            } else {
+                currentImageIndex = index;
+            }
+            
+            var modalImg = document.getElementById('modalImage');
+            var counter = document.getElementById('imageCounter');
+            var thumbnails = document.querySelectorAll('.thumbnail');
+            
+            // Update image
+            modalImg.src = currentImageUrls[currentImageIndex];
+            
+            // Update counter
+            counter.textContent = (currentImageIndex + 1) + ' / ' + currentImageUrls.length;
+            
+            // Update active thumbnail
+            for (var i = 0; i < thumbnails.length; i++) {
+                thumbnails[i].classList.remove('active');
+                if (i === currentImageIndex) {
+                    thumbnails[i].classList.add('active');
+                }
+            }
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            var modal = document.getElementById('imageModal');
+            if (event.target === modal) {
+                closeImageViewer();
+            }
+        }
+        
+        // Keyboard navigation
+        document.onkeydown = function(e) {
+            if (document.getElementById('imageModal').style.display === 'block') {
+                switch(e.keyCode) {
+                    case 27: // ESC
+                        closeImageViewer();
+                        break;
+                    case 37: // Left arrow
+                        changeImage(-1);
+                        break;
+                    case 39: // Right arrow
+                        changeImage(1);
+                        break;
+                }
             }
         }
         
