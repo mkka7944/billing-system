@@ -43,6 +43,11 @@ def shorten_mcuc_name(mcuc_name, district, tehsil):
                 # Fallback: just get the first part after comma
                 if ',' in name:
                     name = name.split(',')[0].strip()
+                else:
+                    # If no comma, just use the first few characters as identifier
+                    parts = name.split()
+                    if parts:
+                        name = parts[0]
         # For Bhalwal tehsil
         elif tehsil == "Bhalwal":
             # Remove "Sargodha - " prefix if present
@@ -56,23 +61,38 @@ def shorten_mcuc_name(mcuc_name, district, tehsil):
                 # Fallback: just get the first part after comma
                 if ',' in name:
                     name = name.split(',')[0].strip()
+                else:
+                    # If no comma, just use the first few characters as identifier
+                    parts = name.split()
+                    if parts:
+                        name = parts[0]
     
     # Special handling for Khushab district
     elif district == "Khushab":
         # Remove district prefix
         if name.startswith(district + " - "):
             name = name[len(district + " - "):]
-        # Extract Zone/Ward information
+        # Extract Zone/Ward information in specific format
         zone_match = re.search(r'(Zone[-\s]*\d+)', name, re.IGNORECASE)
         ward_match = re.search(r'(Ward[-\s]*\d+)', name, re.IGNORECASE)
+        # Also look for location-specific identifiers
+        location_match = re.search(r'([A-Za-z]+\s*[A-Za-z]*)\s*(?:/|,|Ward)', name)
+        
         if zone_match and ward_match:
             zone = zone_match.group(1).replace('-', '').replace(' ', '').upper()
             ward = ward_match.group(1).replace('-', '').replace(' ', '').upper()
-            name = f"{zone}/{ward}"
+            # Add location identifier if available
+            if location_match:
+                location = location_match.group(1).strip().replace(' ', '').upper()
+                name = f"{zone}/{ward}/{location}"
+            else:
+                name = f"{zone}/{ward}"
         elif zone_match:
             name = zone_match.group(1).replace('-', '').replace(' ', '').upper()
         elif ward_match:
             name = ward_match.group(1).replace('-', '').replace(' ', '').upper()
+        elif location_match:
+            name = location_match.group(1).strip().replace(' ', '').upper()
     
     # General fallback for other districts
     else:
@@ -89,6 +109,14 @@ def shorten_mcuc_name(mcuc_name, district, tehsil):
             name = mc_match.group(1).upper()
         elif uc_match:
             name = uc_match.group(1).upper()
+        else:
+            # Final fallback - use first part before comma or first word
+            if ',' in name:
+                name = name.split(',')[0].strip()
+            else:
+                parts = name.split()
+                if parts:
+                    name = parts[0]
     
     return name if name else mcuc_name
 
@@ -404,7 +432,6 @@ def generate_html_map(data_by_location, output_file):
             </div>
             <div style="display: flex; gap: 4px; margin-top: 6px;">
                 <button onclick="loadAllMarkers()" style="flex: 1; background: #2ecc71; color: white; font-size: 10px; padding: 4px;">Show All Markers</button>
-                <button onclick="loadMoreMarkers()" style="flex: 1; background: #f39c12; color: white; font-size: 10px; padding: 4px;">Load More</button>
             </div>
             
             <div class="layer-control">
@@ -586,7 +613,7 @@ def generate_html_map(data_by_location, output_file):
                             tehsil.mcucs.forEach(function(mcuc) {
                                 var option = document.createElement('option');
                                 option.value = mcuc.full_name;
-                                option.text = districtGroup.district + ' - ' + tehsil.tehsil + ' - ' + mcuc.full_name;
+                                option.text = mcuc.short_name;
                                 mcucSelect.appendChild(option);
                             });
                         });
@@ -599,7 +626,7 @@ def generate_html_map(data_by_location, output_file):
                                 tehsil.mcucs.forEach(function(mcuc) {
                                     var option = document.createElement('option');
                                     option.value = mcuc.full_name;
-                                    option.text = tehsil.tehsil + ' - ' + mcuc.full_name;
+                                    option.text = mcuc.short_name;
                                     mcucSelect.appendChild(option);
                                 });
                             });
@@ -615,7 +642,7 @@ def generate_html_map(data_by_location, output_file):
                                 tehsil.mcucs.forEach(function(mcuc) {
                                     var option = document.createElement('option');
                                     option.value = mcuc.full_name;
-                                    option.text = mcuc.full_name;
+                                    option.text = mcuc.short_name;
                                     mcucSelect.appendChild(option);
                                 });
                             }
@@ -806,12 +833,15 @@ def generate_html_map(data_by_location, output_file):
         // Function to toggle main table visibility
         function toggleMainTable() {
             var legend = document.querySelector('.legend');
+            var controls = document.querySelector('.controls');
             var btn = document.getElementById('collapseBtn');
             if (legend.style.display === 'none') {
                 legend.style.display = 'block';
+                controls.style.display = 'block';
                 btn.textContent = 'Collapse';
             } else {
                 legend.style.display = 'none';
+                controls.style.display = 'none';
                 btn.textContent = 'Expand';
             }
         }
