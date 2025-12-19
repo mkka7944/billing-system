@@ -752,7 +752,37 @@ def generate_html_map(data_by_location, output_file):
             
             currentMarkerCount = markerCount;
 
-            updateStatusBar('Loaded ' + markerCount + ' markers');
+            // Count total markers that match current filters (without limit)
+            var totalCount = 0;
+            surveyData.forEach(function(survey) {
+                // Skip if filtering by district and district doesn't match
+                if (filterDistrict !== 'all' && survey.district.trim() !== filterDistrict.trim()) {
+                    return;
+                }
+                
+                // Skip if filtering by tehsil and tehsil doesn't match
+                if (filterTehsil !== 'all' && survey.tehsil.trim() !== filterTehsil.trim()) {
+                    return;
+                }
+                
+                // Skip if filtering by MC/UC and MC/UC doesn't match
+                if (filterMCUC !== 'all' && survey.mc_uc.trim() !== filterMCUC.trim()) {
+                    return;
+                }
+                
+                // Skip if filtering by consumer type and type doesn't match
+                if (filterType !== 'all' && survey.consumer_type.trim().toLowerCase() !== filterType.trim().toLowerCase()) {
+                    return;
+                }
+                
+                totalCount++;
+            });
+            
+            if (markerCount === totalCount) {
+                updateStatusBar('Loaded ' + markerCount + ' markers (all matching filters)');
+            } else {
+                updateStatusBar('Loaded ' + markerCount + ' markers (limited display, ' + totalCount + ' total matching filters)');
+            }
             
             // Smart zoom handling
             if (bounds.length > 0) {
@@ -767,10 +797,14 @@ def generate_html_map(data_by_location, output_file):
                     // If specific district selected, fit with more padding
                     map.fitBounds(boundsGroup, {padding: [100, 100]});
                 } else {
-                    // If "All" selected, don't zoom out excessively
+                    // If "All" selected, maintain reasonable zoom level
                     var currentZoom = map.getZoom();
-                    if (currentZoom < 10) {
-                        map.setZoom(10);
+                    // Only zoom if we have a good number of markers
+                    if (markerCount > 10) {
+                        map.fitBounds(boundsGroup, {padding: [50, 50]});
+                    } else if (currentZoom < 11) {
+                        // Don't zoom out too far if we have few markers
+                        map.setZoom(Math.max(currentZoom, 11));
                     }
                 }
             } else {
@@ -825,26 +859,83 @@ def generate_html_map(data_by_location, output_file):
             MAX_MARKERS = surveyData.length; // Set to total number of records
             applyFilters();
             MAX_MARKERS = originalMaxMarkers; // Restore original limit
-            updateStatusBar('Loaded all available markers');
         }
         
 
         
         // Function to toggle main table visibility
         function toggleMainTable() {
+            var infoPanel = document.querySelector('.info');
             var legend = document.querySelector('.legend');
             var controls = document.querySelector('.controls');
             var btn = document.getElementById('collapseBtn');
-            if (legend.style.display === 'none') {
+            
+            if (legend && controls && legend.style.display === 'none') {
+                // Expand the panel
                 legend.style.display = 'block';
                 controls.style.display = 'block';
                 btn.textContent = 'Collapse';
-            } else {
+            } else if (legend && controls) {
+                // Collapse the panel but keep a small expand button
                 legend.style.display = 'none';
                 controls.style.display = 'none';
-                btn.textContent = 'Expand';
+                btn.textContent = 'Expand Panel';
             }
         }
+        
+        // Function to create a floating expand button when panel is collapsed
+        function createFloatingExpandButton() {
+            // Check if button already exists
+            if (document.getElementById('floatingExpandBtn')) return;
+            
+            var expandBtn = document.createElement('button');
+            expandBtn.id = 'floatingExpandBtn';
+            expandBtn.textContent = '☰ Expand Panel';
+            expandBtn.style.position = 'fixed';
+            expandBtn.style.top = '10px';
+            expandBtn.style.right = '10px';
+            expandBtn.style.zIndex = '1001';
+            expandBtn.style.background = '#3498db';
+            expandBtn.style.color = 'white';
+            expandBtn.style.border = 'none';
+            expandBtn.style.padding = '5px 10px';
+            expandBtn.style.borderRadius = '4px';
+            expandBtn.style.cursor = 'pointer';
+            expandBtn.style.fontSize = '12px';
+            expandBtn.onclick = function() {
+                toggleMainTable();
+                document.body.removeChild(expandBtn);
+            };
+            
+            document.body.appendChild(expandBtn);
+        }
+        
+        // Override toggleMainTable to also handle floating button
+        var originalToggleMainTable = toggleMainTable;
+        toggleMainTable = function() {
+            var legend = document.querySelector('.legend');
+            var controls = document.querySelector('.controls');
+            var btn = document.getElementById('collapseBtn');
+            
+            if (legend && controls && legend.style.display === 'none') {
+                // Expand the panel
+                legend.style.display = 'block';
+                controls.style.display = 'block';
+                btn.textContent = 'Collapse';
+                // Remove floating button if it exists
+                var floatingBtn = document.getElementById('floatingExpandBtn');
+                if (floatingBtn) {
+                    document.body.removeChild(floatingBtn);
+                }
+            } else if (legend && controls) {
+                // Collapse the panel
+                legend.style.display = 'none';
+                controls.style.display = 'none';
+                btn.textContent = 'Expand Panel';
+                // Create floating button
+                createFloatingExpandButton();
+            }
+        };
         
         // Initialize with table expanded as per project configuration
         document.addEventListener('DOMContentLoaded', function() {
