@@ -586,7 +586,6 @@ def generate_html_map(data_by_location, output_file):
         // Function to create markers with filters
         function createMarkers(filterDistrict = 'all', filterTehsil = 'all', filterMCUC = 'all', filterType = 'all') {
             updateStatusBar('Loading markers...');
-            console.log('Filters applied:', {filterDistrict, filterTehsil, filterMCUC, filterType});
             
             // Clear existing markers
             markers.clearLayers();
@@ -598,29 +597,26 @@ def generate_html_map(data_by_location, output_file):
             // Process each survey point
             surveyData.some(function(survey) {
                 // Skip if filtering by district and district doesn't match
-                if (filterDistrict !== 'all' && survey.district !== filterDistrict) {
+                if (filterDistrict !== 'all' && survey.district.trim() !== filterDistrict.trim()) {
                     return false;
                 }
                 
                 // Skip if filtering by tehsil and tehsil doesn't match
-                if (filterTehsil !== 'all' && survey.tehsil !== filterTehsil) {
+                if (filterTehsil !== 'all' && survey.tehsil.trim() !== filterTehsil.trim()) {
                     return false;
                 }
                 
                 // Skip if filtering by MC/UC and MC/UC doesn't match
-                if (filterMCUC !== 'all' && survey.mc_uc !== filterMCUC) {
+                if (filterMCUC !== 'all' && survey.mc_uc.trim() !== filterMCUC.trim()) {
                     return false;
                 }
                 
                 // Skip if filtering by consumer type and type doesn't match
-                if (filterType !== 'all' && survey.consumer_type.toLowerCase() !== filterType.toLowerCase()) {
+                if (filterType !== 'all' && survey.consumer_type.trim().toLowerCase() !== filterType.trim().toLowerCase()) {
                     return false;
                 }
                 
-                // Debug logging for first few records
-                if (markerCount < 5) {
-                    console.log('Including marker:', survey.district, survey.tehsil, survey.mc_uc);
-                }
+
                 
                 // Parse location
                 var coords = survey.location.split(',');
@@ -669,7 +665,7 @@ def generate_html_map(data_by_location, output_file):
             });
             
             currentMarkerCount = markerCount;
-            console.log('Total markers loaded:', markerCount);
+
             updateStatusBar('Loaded ' + markerCount + ' markers');
             
             // Smart zoom handling
