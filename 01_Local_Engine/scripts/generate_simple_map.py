@@ -66,36 +66,36 @@ def generate_html_map(data_by_mc_uc, output_file):
             z-index: 1000;
             max-width: 300px;
         }}
-        .legend {{
+        .legend {
             background: white;
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             max-height: 300px;
             overflow-y: auto;
-        }}
-        .legend-item {{
+        }
+        .legend-item {
             margin: 2px 0;
             display: flex;
             align-items: center;
-        }}
-        .legend-color {{
+        }
+        .legend-color {
             width: 15px;
             height: 15px;
             margin-right: 5px;
             border: 1px solid #666;
-        }}
-        .controls {{
+        }
+        .controls {
             background: white;
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             margin-bottom: 10px;
-        }}
-        select, button {{
+        }
+        select, button {
             padding: 5px;
             margin: 2px;
-        }}
+        }
     </style>
 </head>
 <body>
