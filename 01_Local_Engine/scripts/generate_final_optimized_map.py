@@ -286,6 +286,8 @@ def generate_html_map(data_by_location, output_file):
             max-height: 80vh;
             object-fit: contain;
             border: 2px solid white;
+            transform-origin: center center;
+            transition: transform 0.3s ease;
         }
         
         .close {
@@ -321,7 +323,7 @@ def generate_html_map(data_by_location, output_file):
             -webkit-user-select: none;
         }
         
-        .rotate-controls {
+        .image-controls {
             position: absolute;
             top: 20px;
             left: 20px;
@@ -329,7 +331,7 @@ def generate_html_map(data_by_location, output_file):
             z-index: 2001;
         }
         
-        .rotate-btn {
+        .control-btn {
             background: rgba(0,0,0,0.5);
             color: white;
             border: none;
@@ -340,7 +342,7 @@ def generate_html_map(data_by_location, output_file):
             font-size: 14px;
         }
         
-        .rotate-btn:hover {
+        .control-btn:hover {
             background: rgba(0,0,0,0.8);
         }
         
@@ -550,11 +552,13 @@ def generate_html_map(data_by_location, output_file):
             <div class="image-counter" id="imageCounter"></div>
             <div class="thumbnail-strip" id="thumbnailStrip"></div>
         </div>
-        <!-- Rotation Controls -->
-        <div class="rotate-controls">
-            <button class="rotate-btn" onclick="rotateImage(-90)">↺ Rotate Left</button>
-            <button class="rotate-btn" onclick="rotateImage(90)">↻ Rotate Right</button>
-            <button class="rotate-btn" onclick="resetRotation()">Reset</button>
+        <!-- Image Controls -->
+        <div class="image-controls">
+            <button class="control-btn" onclick="zoomImage(1.2)">+</button>
+            <button class="control-btn" onclick="zoomImage(0.8)">-</button>
+            <button class="control-btn" onclick="rotateImage(-90)">↺</button>
+            <button class="control-btn" onclick="rotateImage(90)">↻</button>
+            <button class="control-btn" onclick="resetImageTransform()">Reset</button>
         </div>
     </div>
     
@@ -1076,11 +1080,13 @@ def generate_html_map(data_by_location, output_file):
         var currentImageUrls = [];
         var currentImageIndex = 0;
         var currentRotation = 0;
+        var currentScale = 1;
         
         function openImageViewer(imageUrls, startIndex) {
             currentImageUrls = imageUrls;
             currentImageIndex = startIndex || 0;
             currentRotation = 0; // Reset rotation when opening new viewer
+            currentScale = 1; // Reset scale when opening new viewer
             
             var modal = document.getElementById('imageModal');
             var modalImg = document.getElementById('modalImage');
@@ -1089,7 +1095,7 @@ def generate_html_map(data_by_location, output_file):
             
             // Set current image
             modalImg.src = currentImageUrls[currentImageIndex];
-            modalImg.style.transform = 'rotate(0deg)'; // Reset rotation
+            updateImageTransform(modalImg);
             
             // Update counter
             counter.textContent = (currentImageIndex + 1) + ' / ' + currentImageUrls.length;
@@ -1127,6 +1133,7 @@ def generate_html_map(data_by_location, output_file):
             currentImageUrls = [];
             currentImageIndex = 0;
             currentRotation = 0;
+            currentScale = 1;
         }
         
         function changeImage(direction) {
@@ -1152,9 +1159,10 @@ def generate_html_map(data_by_location, output_file):
             // Update image
             modalImg.src = currentImageUrls[currentImageIndex];
             
-            // Reset rotation for new image
+            // Reset transform for new image
             currentRotation = 0;
-            modalImg.style.transform = 'rotate(0deg)';
+            currentScale = 1;
+            updateImageTransform(modalImg);
             
             // Update counter
             counter.textContent = (currentImageIndex + 1) + ' / ' + currentImageUrls.length;
@@ -1168,22 +1176,79 @@ def generate_html_map(data_by_location, output_file):
             }
         }
         
-        // Image Rotation Functions
+        // Image Transform Functions
+        function updateImageTransform(imgElement) {
+            if (!imgElement) return;
+            imgElement.style.transform = 'rotate(' + currentRotation + 'deg) scale(' + currentScale + ')';
+        }
+        
         function rotateImage(degrees) {
             var modalImg = document.getElementById('modalImage');
             if (!modalImg) return;
             
             currentRotation = (currentRotation + degrees) % 360;
-            modalImg.style.transform = 'rotate(' + currentRotation + 'deg)';
+            updateImageTransform(modalImg);
         }
         
-        function resetRotation() {
+        function zoomImage(factor) {
+            var modalImg = document.getElementById('modalImage');
+            if (!modalImg) return;
+            
+            // Limit zoom between 0.5x and 5x
+            var newScale = currentScale * factor;
+            if (newScale >= 0.5 && newScale <= 5) {
+                currentScale = newScale;
+                updateImageTransform(modalImg);
+            }
+        }
+        
+        function resetImageTransform() {
             var modalImg = document.getElementById('modalImage');
             if (!modalImg) return;
             
             currentRotation = 0;
-            modalImg.style.transform = 'rotate(0deg)';
+            currentScale = 1;
+            updateImageTransform(modalImg);
         }
+        
+        // Touch gesture support for mobile zoom
+        var touchStartDistance = 0;
+        
+        function getTouchDistance(e) {
+            if (e.touches.length < 2) return 0;
+            var dx = e.touches[0].clientX - e.touches[1].clientX;
+            var dy = e.touches[0].clientY - e.touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        document.getElementById('modalImage').addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                touchStartDistance = getTouchDistance(e);
+            }
+        });
+        
+        document.getElementById('modalImage').addEventListener('touchmove', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                var currentDistance = getTouchDistance(e);
+                if (touchStartDistance > 0) {
+                    var scaleChange = currentDistance / touchStartDistance;
+                    var modalImg = document.getElementById('modalImage');
+                    if (modalImg) {
+                        // Limit zoom between 0.5x and 5x
+                        var newScale = currentScale * scaleChange;
+                        if (newScale >= 0.5 && newScale <= 5) {
+                            currentScale = newScale;
+                            updateImageTransform(modalImg);
+                        }
+                    }
+                }
+            }
+        });
+        
+        document.getElementById('modalImage').addEventListener('touchend', function(e) {
+            touchStartDistance = 0;
+        });
         
         // Close modal when clicking outside
         window.onclick = function(event) {
@@ -1205,6 +1270,14 @@ def generate_html_map(data_by_location, output_file):
                         break;
                     case 39: // Right arrow
                         changeImage(1);
+                        break;
+                    case 107: // Plus key
+                    case 187: // Plus key (Firefox)
+                        zoomImage(1.2);
+                        break;
+                    case 109: // Minus key
+                    case 189: // Minus key (Firefox)
+                        zoomImage(0.8);
                         break;
                 }
             }
