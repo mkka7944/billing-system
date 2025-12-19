@@ -446,7 +446,7 @@ def generate_html_map(data_by_location, output_file):
         var markers = L.layerGroup().addTo(map);
         
         // Performance settings
-        var MAX_MARKERS = 3000;
+        var MAX_MARKERS = 10000;
         var currentMarkerCount = 0;
         
         // Function to change base layer
