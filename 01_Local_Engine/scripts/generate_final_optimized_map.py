@@ -586,6 +586,7 @@ def generate_html_map(data_by_location, output_file):
         // Function to create markers with filters
         function createMarkers(filterDistrict = 'all', filterTehsil = 'all', filterMCUC = 'all', filterType = 'all') {
             updateStatusBar('Loading markers...');
+            console.log('Filters applied:', {filterDistrict, filterTehsil, filterMCUC, filterType});
             
             // Clear existing markers
             markers.clearLayers();
@@ -614,6 +615,11 @@ def generate_html_map(data_by_location, output_file):
                 // Skip if filtering by consumer type and type doesn't match
                 if (filterType !== 'all' && survey.consumer_type.toLowerCase() !== filterType.toLowerCase()) {
                     return false;
+                }
+                
+                // Debug logging for first few records
+                if (markerCount < 5) {
+                    console.log('Including marker:', survey.district, survey.tehsil, survey.mc_uc);
                 }
                 
                 // Parse location
@@ -663,6 +669,7 @@ def generate_html_map(data_by_location, output_file):
             });
             
             currentMarkerCount = markerCount;
+            console.log('Total markers loaded:', markerCount);
             updateStatusBar('Loaded ' + markerCount + ' markers');
             
             // Smart zoom handling
@@ -722,9 +729,6 @@ def generate_html_map(data_by_location, output_file):
         document.getElementById('districtFilter').value = 'Sargodha';
         populateTehsilFilter();
         populateMCUCFilter();
-        
-        // Don't load any markers initially for performance
-        updateStatusBar('Ready. Select filters and click Apply.');
         
         // Don't load any markers initially for performance
         updateStatusBar('Ready. Select filters and click Apply.');
