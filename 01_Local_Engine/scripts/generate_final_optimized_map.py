@@ -187,6 +187,7 @@ def generate_html_map(data_by_location, output_file):
                         'house_type': str(record.get('House Type', '')).strip(),
                         'survey_date': str(record.get('Survey Date', '')).strip(),
                         'location': str(record.get('Location', '')).strip(),
+                        'image_url_1': str(record.get('Image URL 1', '')).strip(),
                         'color': color
                     })
             
@@ -713,7 +714,8 @@ def generate_html_map(data_by_location, output_file):
                 
                 if (isNaN(lat) || isNaN(lng)) return false;
                 
-                // Create popup content
+                // Create popup content with image thumbnail
+                var imageUrl = survey.image_url_1 || '';
                 var popupContent = 
                     '<b>ID:</b> ' + survey.survey_id + '<br>' +
                     '<b>District:</b> ' + survey.district + '<br>' +
@@ -722,6 +724,14 @@ def generate_html_map(data_by_location, output_file):
                     '<b>Type:</b> ' + survey.consumer_type + '<br>' +
                     '<b>House:</b> ' + survey.house_type + '<br>' +
                     '<b>Date:</b> ' + survey.survey_date;
+                
+                // Add image thumbnail if available
+                if (imageUrl && imageUrl.trim() !== '') {
+                    popupContent += '<br><div style="margin-top: 8px;"><b>Image:</b><br>' +
+                        '<a href="' + imageUrl + '" target="_blank">' +
+                        '<img src="' + imageUrl + '" style="max-width: 150px; max-height: 150px; border: 1px solid #ccc; cursor: pointer;" alt="Survey Image" title="Click to view full size">' +
+                        '</a></div>';
+                }
                 
                 // Get color for this MC/UC
                 var color = survey.color || '#3388ff';
