@@ -18,33 +18,8 @@ def get_marker_color(identifier):
     return f"hsl({hash_val}, 70%, 45%)"
 
 def shorten_mcuc_name(mcuc_name, district, tehsil):
-    """Shorten MC/UC names by removing redundant prefixes"""
-    name = mcuc_name
-    
-    # Remove district prefix if present
-    if name.startswith(district + " - "):
-        name = name[len(district + " - "):]
-    
-    # Remove tehsil prefix if present
-    if name.startswith(tehsil + " - "):
-        name = name[len(tehsil + " - "):]
-    
-    # Special handling for Sargodha
-    if district == "Sargodha":
-        # Extract MC-1, MC-2, etc. pattern
-        mc_match = re.search(r'(MC-\d+)', name)
-        if mc_match:
-            name = mc_match.group(1)
-        # For Bhalwal, remove "Sargodha - " prefix
-        elif tehsil == "Bhalwal" and name.startswith("Sargodha - "):
-            name = name[len("Sargodha - "):]
-    
-    # For UC names, try to extract just the UC part
-    uc_match = re.search(r'(UC[-\s]*\d+|[Uu]nion\s*[Cc]ouncil[-\s]*\d+)', name, re.IGNORECASE)
-    if uc_match:
-        name = uc_match.group(1)
-    
-    return name if name else mcuc_name
+    """Original MC/UC names without shortening"""
+    return mcuc_name
 
 def generate_html_map(data_by_location, output_file):
     """Generate optimized HTML file with improved naming"""
@@ -383,7 +358,7 @@ def generate_html_map(data_by_location, output_file):
                         </div>
                         <div class="tehsil-totals">Total: {tehsil_group["total"]}, Dom: {tehsil_group["domestic"]}, Com: {tehsil_group["commercial"]}</div>
                         <div class="collapsible-content">
-''' + ''.join([f'                            <div class="legend-item"><div class="legend-color" style="background-color:{mcuc["color"]};"></div>{mcuc["short_name"]} <span class="counts">({mcuc["count"]}, Dom:{mcuc["domestic"]}, Com:{mcuc["commercial"]})</span></div>\n' for mcuc in tehsil_group["mcucs"]]) + '''                        </div>
+''' + ''.join([f'                            <div class="legend-item"><div class="legend-color" style="background-color:{mcuc["color"]};"></div>{mcuc["full_name"]} <span class="counts">({mcuc["count"]}, Dom:{mcuc["domestic"]}, Com:{mcuc["commercial"]})</span></div>\n' for mcuc in tehsil_group["mcucs"]]) + '''                        </div>
                     </div>
 ''' for j, tehsil_group in enumerate(district_group["tehsils"])]) + '''                </div>
             </div>
@@ -530,7 +505,7 @@ def generate_html_map(data_by_location, output_file):
                             tehsil.mcucs.forEach(function(mcuc) {
                                 var option = document.createElement('option');
                                 option.value = mcuc.full_name;
-                                option.text = districtGroup.district + ' - ' + tehsil.tehsil + ' - ' + mcuc.short_name;
+                                option.text = districtGroup.district + ' - ' + tehsil.tehsil + ' - ' + mcuc.full_name;
                                 mcucSelect.appendChild(option);
                             });
                         });
@@ -543,7 +518,7 @@ def generate_html_map(data_by_location, output_file):
                                 tehsil.mcucs.forEach(function(mcuc) {
                                     var option = document.createElement('option');
                                     option.value = mcuc.full_name;
-                                    option.text = tehsil.tehsil + ' - ' + mcuc.short_name;
+                                    option.text = tehsil.tehsil + ' - ' + mcuc.full_name;
                                     mcucSelect.appendChild(option);
                                 });
                             });
@@ -559,7 +534,7 @@ def generate_html_map(data_by_location, output_file):
                                 tehsil.mcucs.forEach(function(mcuc) {
                                     var option = document.createElement('option');
                                     option.value = mcuc.full_name;
-                                    option.text = mcuc.short_name;
+                                    option.text = mcuc.full_name;
                                     mcucSelect.appendChild(option);
                                 });
                             }
@@ -607,11 +582,8 @@ def generate_html_map(data_by_location, output_file):
                 }
                 
                 // Skip if filtering by MC/UC and MC/UC doesn't match
-                // When filterMCUC is 'all', we show all MC/UCs for the selected district/tehsil
-                if (filterMCUC !== 'all' && filterMCUC !== '' && filterMCUC !== null && filterMCUC !== undefined) {
-                    if (survey.mc_uc.trim() !== filterMCUC.trim()) {
-                        return false;
-                    }
+                if (filterMCUC !== 'all' && survey.mc_uc.trim() !== filterMCUC.trim()) {
+                    return false;
                 }
                 
                 // Skip if filtering by consumer type and type doesn't match
@@ -706,11 +678,6 @@ def generate_html_map(data_by_location, output_file):
             var selectedTehsil = tehsilSelect.value;
             var selectedMCUC = mcucSelect.value;
             var selectedType = typeSelect.value;
-            
-            // Ensure we're using the correct "all" value
-            if (selectedMCUC === '' || selectedMCUC === null || selectedMCUC === undefined) {
-                selectedMCUC = 'all';
-            }
             
             createMarkers(selectedDistrict, selectedTehsil, selectedMCUC, selectedType);
         }
