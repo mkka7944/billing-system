@@ -18,8 +18,35 @@ def get_marker_color(identifier):
     return f"hsl({hash_val}, 70%, 45%)"
 
 def shorten_mcuc_name(mcuc_name, district, tehsil):
-    """Original MC/UC names without shortening"""
-    return mcuc_name
+    """Shorten MC/UC names for mobile view"""
+    name = mcuc_name
+    
+    # Remove district prefix if present
+    if name.startswith(district + " - "):
+        name = name[len(district + " - "):]
+    
+    # Remove tehsil prefix if present
+    if name.startswith(tehsil + " - "):
+        name = name[len(tehsil + " - "):]
+    
+    # Special handling for Sargodha
+    if district == "Sargodha":
+        # Extract MC-1, MC-2, etc. pattern
+        import re
+        mc_match = re.search(r'(MC-\d+)', name)
+        if mc_match:
+            name = mc_match.group(1)
+        # For Bhalwal, remove "Sargodha - " prefix
+        elif tehsil == "Bhalwal" and name.startswith("Sargodha - "):
+            name = name[len("Sargodha - "):]
+    
+    # For UC names, try to extract just the UC part
+    import re
+    uc_match = re.search(r'(UC[-\s]*\d+|[Uu]nion\s*[Cc]ouncil[-\s]*\d+)', name, re.IGNORECASE)
+    if uc_match:
+        name = uc_match.group(1)
+    
+    return name if name else mcuc_name
 
 def generate_html_map(data_by_location, output_file):
     """Generate optimized HTML file with improved naming"""
@@ -582,8 +609,11 @@ def generate_html_map(data_by_location, output_file):
                 }
                 
                 // Skip if filtering by MC/UC and MC/UC doesn't match
-                if (filterMCUC !== 'all' && survey.mc_uc.trim() !== filterMCUC.trim()) {
-                    return false;
+                // When filterMCUC is 'all', we show all MC/UCs for the selected district/tehsil
+                if (filterMCUC !== 'all' && filterMCUC !== '' && filterMCUC !== null && filterMCUC !== undefined) {
+                    if (survey.mc_uc.trim() !== filterMCUC.trim()) {
+                        return false;
+                    }
                 }
                 
                 // Skip if filtering by consumer type and type doesn't match
