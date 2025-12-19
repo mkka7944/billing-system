@@ -358,6 +358,10 @@ def generate_html_map(data_by_location, output_file):
                 <button onclick="applyFilters()" style="flex: 1; background: #3498db; color: white;">Apply</button>
                 <button onclick="resetFilters()" style="flex: 1; background: #95a5a6; color: white;">Reset</button>
             </div>
+            <div style="display: flex; gap: 4px; margin-top: 6px;">
+                <button onclick="loadAllMarkers()" style="flex: 1; background: #2ecc71; color: white; font-size: 10px; padding: 4px;">Show All Markers</button>
+                <button onclick="loadMoreMarkers()" style="flex: 1; background: #f39c12; color: white; font-size: 10px; padding: 4px;">Load More</button>
+            </div>
             
             <div class="layer-control">
                 <div class="filter-label">Map Layer</div>
@@ -371,8 +375,15 @@ def generate_html_map(data_by_location, output_file):
                 Ready. Select filters and click Apply.
             </div>
         </div>
+        <div style="display: flex; gap: 4px; margin-top: 6px;">
+            <button onclick="loadAllMarkers()" style="flex: 1; background: #2ecc71; color: white; font-size: 10px; padding: 4px;">Show All Markers</button>
+            <button onclick="loadMoreMarkers()" style="flex: 1; background: #f39c12; color: white; font-size: 10px; padding: 4px;">Load More</button>
+        </div>
         <div class="legend">
-            <h4>Location Hierarchy</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4 style="margin: 0;">Location Hierarchy</h4>
+                <button onclick="toggleMainTable()" style="background: #ecf0f1; border: none; padding: 2px 6px; font-size: 10px; cursor: pointer;" id="collapseBtn">Collapse</button>
+            </div>
 ''' + ''.join([f'''            <div class="district-group" id="district-{i}">
                 <div class="district-header" onclick="toggleCollapse(this.parentNode)">
                     <span class="toggle-icon"></span>{district_group["district"]}
@@ -385,7 +396,7 @@ def generate_html_map(data_by_location, output_file):
                         </div>
                         <div class="tehsil-totals">Total: {tehsil_group["total"]}, Dom: {tehsil_group["domestic"]}, Com: {tehsil_group["commercial"]}</div>
                         <div class="collapsible-content">
-''' + ''.join([f'                            <div class="legend-item"><div class="legend-color" style="background-color:{mcuc["color"]};"></div>{mcuc["full_name"]} <span class="counts">({mcuc["count"]}, Dom:{mcuc["domestic"]}, Com:{mcuc["commercial"]})</span></div>\n' for mcuc in tehsil_group["mcucs"]]) + '''                        </div>
+''' + ''.join([f'                            <div class="legend-item"><div class="legend-color" style="background-color:{mcuc["color"]};"></div>{mcuc["short_name"]} <span class="counts">({mcuc["count"]}, Dom:{mcuc["domestic"]}, Com:{mcuc["commercial"]})</span></div>\n' for mcuc in tehsil_group["mcucs"]]) + '''                        </div>
                     </div>
 ''' for j, tehsil_group in enumerate(district_group["tehsils"])]) + '''                </div>
             </div>
@@ -662,7 +673,7 @@ def generate_html_map(data_by_location, output_file):
                 
                 // Performance limit
                 if (markerCount >= MAX_MARKERS) {
-                    updateStatusBar('Loaded ' + markerCount + ' markers (limit reached)');
+                    updateStatusBar('Loaded ' + markerCount + ' markers (limit reached: ' + MAX_MARKERS + ')');
                     return true; // Break the loop
                 }
                 
@@ -733,6 +744,44 @@ def generate_html_map(data_by_location, output_file):
         
         // Don't load any markers initially for performance
         updateStatusBar('Ready. Select filters and click Apply.');
+        
+        // Function to load all markers without limit
+        function loadAllMarkers() {
+            var originalMaxMarkers = MAX_MARKERS;
+            MAX_MARKERS = surveyData.length; // Set to total number of records
+            applyFilters();
+            MAX_MARKERS = originalMaxMarkers; // Restore original limit
+            updateStatusBar('Loaded all available markers');
+        }
+        
+        // Function to load more markers incrementally
+        function loadMoreMarkers() {
+            var originalMaxMarkers = MAX_MARKERS;
+            MAX_MARKERS = Math.min(MAX_MARKERS + 1000, surveyData.length); // Increase by 1000 or to max
+            applyFilters();
+            MAX_MARKERS = originalMaxMarkers; // Restore original limit
+            updateStatusBar('Loaded additional markers');
+        }
+        
+        // Function to toggle main table visibility
+        function toggleMainTable() {
+            var legend = document.querySelector('.legend');
+            var btn = document.getElementById('collapseBtn');
+            if (legend.style.display === 'none') {
+                legend.style.display = 'block';
+                btn.textContent = 'Collapse';
+            } else {
+                legend.style.display = 'none';
+                btn.textContent = 'Expand';
+            }
+        }
+        
+        // Initialize with table expanded as per project configuration
+        document.addEventListener('DOMContentLoaded', function() {
+            var legend = document.querySelector('.legend');
+            legend.style.display = 'block';
+            document.getElementById('collapseBtn').textContent = 'Collapse';
+        });
     </script>
 </body>
 </html>'''
