@@ -723,14 +723,17 @@ def generate_html_map(data_by_location, output_file):
         // Don't load any markers initially for performance
         updateStatusBar('Ready. Select filters and click Apply.');
         
-        // Expand first district by default for better UX
-        if (document.querySelector('.district-group')) {
-            document.querySelector('.district-group').classList.add('expanded');
-            // Also expand the first tehsil
-            if (document.querySelector('.tehsil-group')) {
-                document.querySelector('.tehsil-group').classList.add('expanded');
-            }
-        }
+        // Expand all districts and tehsils by default
+        setTimeout(function() {
+            var districtGroups = document.querySelectorAll('.district-group');
+            districtGroups.forEach(function(districtGroup) {
+                districtGroup.classList.add('expanded');
+                var tehsilGroups = districtGroup.querySelectorAll('.tehsil-group');
+                tehsilGroups.forEach(function(tehsilGroup) {
+                    tehsilGroup.classList.add('expanded');
+                });
+            });
+        }, 100);
     </script>
 </body>
 </html>'''
