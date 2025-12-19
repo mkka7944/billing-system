@@ -53,8 +53,11 @@ def generate_html_map(data_by_location, output_file):
     survey_points = []
     location_groups = []
     
-    # Sort districts
-    sorted_districts = sorted(data_by_location.keys())
+    # Sort districts - put Sargodha first, then others alphabetically
+    all_districts = list(data_by_location.keys())
+    sorted_districts = sorted([d for d in all_districts if d != 'Sargodha'])
+    if 'Sargodha' in all_districts:
+        sorted_districts.insert(0, 'Sargodha')
     
     for district in sorted_districts:
         tehsil_dict = data_by_location[district]
@@ -723,17 +726,8 @@ def generate_html_map(data_by_location, output_file):
         // Don't load any markers initially for performance
         updateStatusBar('Ready. Select filters and click Apply.');
         
-        // Expand all districts and tehsils by default
-        setTimeout(function() {
-            var districtGroups = document.querySelectorAll('.district-group');
-            districtGroups.forEach(function(districtGroup) {
-                districtGroup.classList.add('expanded');
-                var tehsilGroups = districtGroup.querySelectorAll('.tehsil-group');
-                tehsilGroups.forEach(function(tehsilGroup) {
-                    tehsilGroup.classList.add('expanded');
-                });
-            });
-        }, 100);
+        // Don't load any markers initially for performance
+        updateStatusBar('Ready. Select filters and click Apply.');
     </script>
 </body>
 </html>'''
