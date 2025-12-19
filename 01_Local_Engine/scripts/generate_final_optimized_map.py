@@ -267,6 +267,7 @@ def generate_html_map(data_by_location, output_file):
             height: 100%;
             background-color: rgba(0,0,0,0.9);
             overflow: hidden;
+            touch-action: none; /* Prevent browser interference with touch events */
         }
         
         .modal-content {
@@ -292,13 +293,21 @@ def generate_html_map(data_by_location, output_file):
         
         .close {
             position: absolute;
-            top: 10px;
-            right: 25px;
+            top: 15px;
+            right: 15px;
             color: #f1f1f1;
-            font-size: 35px;
+            font-size: 40px;
             font-weight: bold;
             cursor: pointer;
             z-index: 2001;
+            background: rgba(0,0,0,0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
         }
         
         .close:hover,
@@ -336,6 +345,10 @@ def generate_html_map(data_by_location, output_file):
             left: 20px;
             color: white;
             z-index: 2001;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            max-width: calc(100% - 100px);
         }
         
         .control-btn {
@@ -370,6 +383,17 @@ def generate_html_map(data_by_location, output_file):
             .prev, .next {
                 padding: 20px 15px;
                 font-size: 24px;
+            }
+            
+            .image-controls {
+                top: 15px;
+                left: 15px;
+                gap: 8px;
+            }
+            
+            .close {
+                top: 15px;
+                right: 15px;
             }
         }
         
@@ -1156,6 +1180,11 @@ def generate_html_map(data_by_location, output_file):
             // Show modal
             modal.style.display = 'block';
             
+            // Add to browser history to handle back button
+            if (window.history && window.history.pushState) {
+                window.history.pushState({galleryOpen: true}, '', '#gallery');
+            }
+            
             // Close popup
             map.closePopup();
         }
@@ -1167,6 +1196,11 @@ def generate_html_map(data_by_location, output_file):
             currentImageIndex = 0;
             currentRotation = 0;
             currentScale = 1;
+            
+            // Remove gallery state from history
+            if (window.history && window.history.state && window.history.state.galleryOpen) {
+                window.history.back();
+            }
         }
         
         function changeImage(direction) {
@@ -1244,9 +1278,10 @@ def generate_html_map(data_by_location, output_file):
             updateImageTransform(modalImg);
         }
         
-        // Touch gesture support for mobile zoom and swipe navigation
+        // Improved touch gesture support for mobile zoom and swipe navigation
         var touchStartDistance = 0;
         var touchStartX = 0;
+        var isSwiping = false;
         
         function getTouchDistance(e) {
             if (e.touches.length < 2) return 0;
@@ -1255,47 +1290,51 @@ def generate_html_map(data_by_location, output_file):
             return Math.sqrt(dx * dx + dy * dy);
         }
         
-        document.getElementById('modalImage').addEventListener('touchstart', function(e) {
+        // Add touch event listeners to the entire modal for better reliability
+        var modalElement = document.getElementById('imageModal');
+        var modalImage = document.getElementById('modalImage');
+        
+        modalImage.addEventListener('touchstart', function(e) {
             if (e.touches.length === 2) {
+                e.preventDefault();
                 touchStartDistance = getTouchDistance(e);
+                isSwiping = false;
             } else if (e.touches.length === 1) {
                 touchStartX = e.touches[0].clientX;
+                isSwiping = true;
             }
-        });
+        }, { passive: false });
         
-        document.getElementById('modalImage').addEventListener('touchmove', function(e) {
-            if (e.touches.length === 2) {
+        modalImage.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 2 && touchStartDistance > 0) {
                 e.preventDefault();
                 var currentDistance = getTouchDistance(e);
-                if (touchStartDistance > 0) {
-                    var scaleChange = currentDistance / touchStartDistance;
-                    var modalImg = document.getElementById('modalImage');
-                    if (modalImg) {
-                        // Limit zoom between 0.5x and 5x
-                        var newScale = currentScale * scaleChange;
-                        if (newScale >= 0.5 && newScale <= 5) {
-                            currentScale = newScale;
-                            updateImageTransform(modalImg);
-                        }
-                    }
+                var scaleChange = currentDistance / touchStartDistance;
+                
+                // Limit zoom between 0.5x and 5x
+                var newScale = currentScale * scaleChange;
+                if (newScale >= 0.5 && newScale <= 5) {
+                    currentScale = newScale;
+                    updateImageTransform(modalImage);
                 }
-            } else if (e.touches.length === 1 && touchStartX > 0) {
-                // Allow slight movement during single touch (panning)
+                isSwiping = false;
+            } else if (e.touches.length === 1 && isSwiping) {
+                // Prevent default during potential swipe to avoid scrolling the page
                 e.preventDefault();
             }
-        });
+        }, { passive: false });
         
-        document.getElementById('modalImage').addEventListener('touchend', function(e) {
+        modalImage.addEventListener('touchend', function(e) {
             if (touchStartDistance > 0) {
                 // End of pinch gesture
-                touchStartDistance = 0;
-            } else if (touchStartX > 0 && e.changedTouches.length > 0) {
+                touchStartDistance = 0;\                isSwiping = false;
+            } else if (isSwiping && touchStartX > 0 && e.changedTouches.length > 0) {
                 // Handle swipe gesture
                 var touchEndX = e.changedTouches[0].clientX;
                 var deltaX = touchEndX - touchStartX;
                 
-                // Only consider significant swipes (more than 50px)
-                if (Math.abs(deltaX) > 50) {
+                // Only consider significant swipes (more than 30px for better mobile response)
+                if (Math.abs(deltaX) > 30) {
                     if (deltaX > 0) {
                         // Swipe right - previous image
                         changeImage(-1);
@@ -1305,6 +1344,65 @@ def generate_html_map(data_by_location, output_file):
                     }
                 }
                 touchStartX = 0;
+                isSwiping = false;
+            }
+        });
+        
+        // Also add touch handlers to the modal itself for better capture
+        modalElement.addEventListener('touchstart', function(e) {
+            // Only handle if the touch is on the image or modal background
+            if (e.target === modalElement || e.target === modalImage) {
+                if (e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    isSwiping = true;
+                }
+            }
+        }, { passive: false });
+        
+        modalElement.addEventListener('touchend', function(e) {
+            if (isSwiping && touchStartX > 0 && e.changedTouches.length > 0) {
+                // Handle swipe gesture on modal background
+                var touchEndX = e.changedTouches[0].clientX;
+                var deltaX = touchEndX - touchStartX;
+                
+                // Only consider significant swipes (more than 30px)
+                if (Math.abs(deltaX) > 30) {
+                    if (deltaX > 0) {
+                        // Swipe right - previous image
+                        changeImage(-1);
+                    } else {
+                        // Swipe left - next image
+                        changeImage(1);
+                    }
+                }
+                touchStartX = 0;
+                isSwiping = false;
+            }
+        });
+        
+        // Ensure navigation buttons work reliably
+        document.querySelector('.prev').addEventListener('click', function(e) {
+            e.stopPropagation();
+            changeImage(-1);
+        });
+        
+        document.querySelector('.next').addEventListener('click', function(e) {
+            e.stopPropagation();
+            changeImage(1);
+        });
+        
+        // Also add keyboard support for navigation buttons
+        document.querySelector('.prev').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                changeImage(-1);
+            }
+        });
+        
+        document.querySelector('.next').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                changeImage(1);
             }
         });
         
@@ -1315,6 +1413,14 @@ def generate_html_map(data_by_location, output_file):
                 closeImageViewer();
             }
         }
+        
+        // Handle browser back button
+        window.onpopstate = function(event) {
+            var modal = document.getElementById('imageModal');
+            if (modal.style.display === 'block') {
+                closeImageViewer();
+            }
+        };
         
         // Keyboard navigation
         document.onkeydown = function(e) {
