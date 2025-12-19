@@ -1034,12 +1034,20 @@ def generate_html_map(data_by_location, output_file):
             updateStatusBar('Filters reset. Select and apply to load data.');
         }
         
-        // Initialize filters - default to Sargodha district and Sargodha tehsil
+        // Initialize filters - default to Sargodha district, Sargodha tehsil, and MC-1
         document.getElementById('districtFilter').value = 'Sargodha';
         populateTehsilFilter();
         // Set tehsil to Sargodha
         document.getElementById('tehsilFilter').value = 'Sargodha';
         populateMCUCFilter();
+        // Set MC/UC to MC-1 (first option that contains 'MC-1')
+        var mcucSelect = document.getElementById('mcucFilter');
+        for (var i = 0; i < mcucSelect.options.length; i++) {
+            if (mcucSelect.options[i].text.includes('MC-1') || mcucSelect.options[i].value.includes('MC-1')) {
+                mcucSelect.selectedIndex = i;
+                break;
+            }
+        }
         // Apply filters to show initial data
         applyFilters();
         
