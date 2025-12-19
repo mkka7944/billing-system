@@ -13,38 +13,82 @@ from collections import defaultdict
 INPUT_FOLDER = os.path.join("..", "outputs", "scraped_data")
 
 def get_marker_color(identifier):
-    """Generate a consistent color for each MC/UC"""
+    """Generate a consistent color for each MC/UC with better differentiation"""
+    # Use a more spread-out hashing algorithm to ensure better color distribution
     hash_val = hash(identifier) % 360
-    return f"hsl({hash_val}, 70%, 45%)"
+    # Ensure colors are more distinct by using larger intervals
+    hue_spread = (hash_val * 137.508) % 360  # Golden angle approximation for better distribution
+    saturation = 70 + (hash_val % 30)  # Vary saturation between 70-100%
+    lightness = 40 + (hash_val % 20)   # Vary lightness between 40-60%
+    return f"hsl({hue_spread}, {saturation}%, {lightness}%)"
 
 def shorten_mcuc_name(mcuc_name, district, tehsil):
-    """Shorten MC/UC names for mobile view"""
+    """Shorten MC/UC names with specific formatting for each district/tehsil"""
     name = mcuc_name
-    
-    # Remove district prefix if present
-    if name.startswith(district + " - "):
-        name = name[len(district + " - "):]
-    
-    # Remove tehsil prefix if present
-    if name.startswith(tehsil + " - "):
-        name = name[len(tehsil + " - "):]
-    
-    # Special handling for Sargodha
-    if district == "Sargodha":
-        # Extract MC-1, MC-2, etc. pattern
-        import re
-        mc_match = re.search(r'(MC-\d+)', name)
-        if mc_match:
-            name = mc_match.group(1)
-        # For Bhalwal, remove "Sargodha - " prefix
-        elif tehsil == "Bhalwal" and name.startswith("Sargodha - "):
-            name = name[len("Sargodha - "):]
-    
-    # For UC names, try to extract just the UC part
     import re
-    uc_match = re.search(r'(UC[-\s]*\d+|[Uu]nion\s*[Cc]ouncil[-\s]*\d+)', name, re.IGNORECASE)
-    if uc_match:
-        name = uc_match.group(1)
+    
+    # Special handling for Sargodha district
+    if district == "Sargodha":
+        # Remove district prefix
+        if name.startswith(district + " - "):
+            name = name[len(district + " - "):]
+            
+        # For Sargodha tehsil
+        if tehsil == "Sargodha":
+            # Extract MC-1, MC-2, etc. pattern
+            mc_match = re.search(r'(MC[-\s]*\d+)', name, re.IGNORECASE)
+            if mc_match:
+                name = mc_match.group(1).upper()
+            else:
+                # Fallback: just get the first part after comma
+                if ',' in name:
+                    name = name.split(',')[0].strip()
+        # For Bhalwal tehsil
+        elif tehsil == "Bhalwal":
+            # Remove "Sargodha - " prefix if present
+            if name.startswith("Sargodha - "):
+                name = name[len("Sargodha - "):]
+            # Extract UC-1, UC-2, etc. pattern
+            uc_match = re.search(r'(UC[-\s]*\d+)', name, re.IGNORECASE)
+            if uc_match:
+                name = uc_match.group(1).upper()
+            else:
+                # Fallback: just get the first part after comma
+                if ',' in name:
+                    name = name.split(',')[0].strip()
+    
+    # Special handling for Khushab district
+    elif district == "Khushab":
+        # Remove district prefix
+        if name.startswith(district + " - "):
+            name = name[len(district + " - "):]
+        # Extract Zone/Ward information
+        zone_match = re.search(r'(Zone[-\s]*\d+)', name, re.IGNORECASE)
+        ward_match = re.search(r'(Ward[-\s]*\d+)', name, re.IGNORECASE)
+        if zone_match and ward_match:
+            zone = zone_match.group(1).replace('-', '').replace(' ', '').upper()
+            ward = ward_match.group(1).replace('-', '').replace(' ', '').upper()
+            name = f"{zone}/{ward}"
+        elif zone_match:
+            name = zone_match.group(1).replace('-', '').replace(' ', '').upper()
+        elif ward_match:
+            name = ward_match.group(1).replace('-', '').replace(' ', '').upper()
+    
+    # General fallback for other districts
+    else:
+        # Remove district and tehsil prefixes
+        if name.startswith(district + " - "):
+            name = name[len(district + " - "):]
+        if name.startswith(tehsil + " - "):
+            name = name[len(tehsil + " - "):]
+        
+        # Try to extract MC/UC pattern
+        mc_match = re.search(r'(MC[-\s]*\d+)', name, re.IGNORECASE)
+        uc_match = re.search(r'(UC[-\s]*\d+|[Uu]nion\s*[Cc]ouncil[-\s]*\d+)', name, re.IGNORECASE)
+        if mc_match:
+            name = mc_match.group(1).upper()
+        elif uc_match:
+            name = uc_match.group(1).upper()
     
     return name if name else mcuc_name
 
@@ -377,7 +421,6 @@ def generate_html_map(data_by_location, output_file):
         </div>
         <div style="display: flex; gap: 4px; margin-top: 6px;">
             <button onclick="loadAllMarkers()" style="flex: 1; background: #2ecc71; color: white; font-size: 10px; padding: 4px;">Show All Markers</button>
-            <button onclick="loadMoreMarkers()" style="flex: 1; background: #f39c12; color: white; font-size: 10px; padding: 4px;">Load More</button>
         </div>
         <div class="legend">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -737,10 +780,14 @@ def generate_html_map(data_by_location, output_file):
             updateStatusBar('Filters reset. Select and apply to load data.');
         }
         
-        // Initialize filters - default to Sargodha district
+        // Initialize filters - default to Sargodha district and Sargodha tehsil
         document.getElementById('districtFilter').value = 'Sargodha';
         populateTehsilFilter();
+        // Set tehsil to Sargodha
+        document.getElementById('tehsilFilter').value = 'Sargodha';
         populateMCUCFilter();
+        // Apply filters to show initial data
+        applyFilters();
         
         // Don't load any markers initially for performance
         updateStatusBar('Ready. Select filters and click Apply.');
@@ -754,14 +801,7 @@ def generate_html_map(data_by_location, output_file):
             updateStatusBar('Loaded all available markers');
         }
         
-        // Function to load more markers incrementally
-        function loadMoreMarkers() {
-            var originalMaxMarkers = MAX_MARKERS;
-            MAX_MARKERS = Math.min(MAX_MARKERS + 1000, surveyData.length); // Increase by 1000 or to max
-            applyFilters();
-            MAX_MARKERS = originalMaxMarkers; // Restore original limit
-            updateStatusBar('Loaded additional markers');
-        }
+
         
         // Function to toggle main table visibility
         function toggleMainTable() {
