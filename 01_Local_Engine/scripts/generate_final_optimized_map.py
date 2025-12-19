@@ -10,7 +10,7 @@ import re
 from collections import defaultdict
 
 # Define input folder
-INPUT_FOLDER = os.path.join("..", "outputs", "scraped_data_appsheet")
+INPUT_FOLDER = os.path.join("..", "outputs", "scraped_data")
 
 def get_marker_color(identifier):
     """Generate a consistent color for each MC/UC"""
@@ -733,7 +733,7 @@ def process_csv_files():
             df = pd.read_csv(file_path, encoding='utf-8-sig', low_memory=False)
             
             # Required columns check
-            required_columns = ['Location', 'District', 'Tehsil', 'Union Council']
+            required_columns = ['Latitude', 'Longitude', 'District', 'Tehsil', 'Union Council']
             if not all(col in df.columns for col in required_columns):
                 print(f"Skipping {csv_file} - missing required columns")
                 continue
@@ -741,8 +741,12 @@ def process_csv_files():
             # Process each row
             for _, row in df.iterrows():
                 # Skip if location is missing
-                if not row.get('Location') or ',' not in str(row['Location']):
+                lat = str(row.get('Latitude', '')).strip()
+                lon = str(row.get('Longitude', '')).strip()
+                if not lat or not lon or lat == '' or lon == '':
                     continue
+                # Create location string in the format expected by the map
+                location_str = f"{lat},{lon}"
                 
                 # Create identifiers
                 district = str(row.get('District', '')).strip()
@@ -752,8 +756,12 @@ def process_csv_files():
                 # Create MC/UC identifier
                 mc_uc = f"{district} - {uc}" if uc else f"{district} - {tehsil}"
                 
+                # Add location string to the row data
+                row_dict = dict(row)
+                row_dict['Location'] = location_str
+                
                 # Add to collection
-                data_by_location[district][tehsil][mc_uc].append(dict(row))
+                data_by_location[district][tehsil][mc_uc].append(row_dict)
                 
         except Exception as e:
             print(f"Error processing {csv_file}: {e}")
