@@ -607,8 +607,11 @@ def generate_html_map(data_by_location, output_file):
                 }
                 
                 // Skip if filtering by MC/UC and MC/UC doesn't match
-                if (filterMCUC !== 'all' && survey.mc_uc.trim() !== filterMCUC.trim()) {
-                    return false;
+                // When filterMCUC is 'all', we show all MC/UCs for the selected district/tehsil
+                if (filterMCUC !== 'all' && filterMCUC !== '' && filterMCUC !== null && filterMCUC !== undefined) {
+                    if (survey.mc_uc.trim() !== filterMCUC.trim()) {
+                        return false;
+                    }
                 }
                 
                 // Skip if filtering by consumer type and type doesn't match
@@ -703,6 +706,11 @@ def generate_html_map(data_by_location, output_file):
             var selectedTehsil = tehsilSelect.value;
             var selectedMCUC = mcucSelect.value;
             var selectedType = typeSelect.value;
+            
+            // Ensure we're using the correct "all" value
+            if (selectedMCUC === '' || selectedMCUC === null || selectedMCUC === undefined) {
+                selectedMCUC = 'all';
+            }
             
             createMarkers(selectedDistrict, selectedTehsil, selectedMCUC, selectedType);
         }
