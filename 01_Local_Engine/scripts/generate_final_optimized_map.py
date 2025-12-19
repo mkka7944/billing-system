@@ -312,15 +312,22 @@ def generate_html_map(data_by_location, output_file):
             position: absolute;
             top: 50%;
             width: auto;
-            padding: 16px;
+            padding: 20px;
             margin-top: -50px;
             color: white;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 24px;
             transition: 0.6s ease;
             border-radius: 0 3px 3px 0;
             user-select: none;
             -webkit-user-select: none;
+            background: rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            min-width: 50px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .image-controls {
@@ -335,15 +342,35 @@ def generate_html_map(data_by_location, output_file):
             background: rgba(0,0,0,0.5);
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 12px 16px;
             margin: 0 5px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
+            min-width: 44px; /* Minimum touch target size */
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .control-btn:hover {
             background: rgba(0,0,0,0.8);
+        }
+        
+        /* Mobile-specific adjustments */
+        @media (max-width: 768px) {
+            .control-btn {
+                padding: 14px 18px;
+                font-size: 20px;
+                min-width: 50px;
+                min-height: 50px;
+            }
+            
+            .prev, .next {
+                padding: 20px 15px;
+                font-size: 24px;
+            }
         }
         
         .next {
@@ -599,9 +626,7 @@ def generate_html_map(data_by_location, output_file):
                 <button onclick="applyFilters()" style="flex: 1; background: #3498db; color: white;">Apply</button>
                 <button onclick="resetFilters()" style="flex: 1; background: #95a5a6; color: white;">Reset</button>
             </div>
-            <div style="display: flex; gap: 4px; margin-top: 6px;">
-                <button onclick="loadAllMarkers()" style="flex: 1; background: #2ecc71; color: white; font-size: 10px; padding: 4px;">Show All Markers</button>
-            </div>
+
             
             <div class="layer-control">
                 <div class="filter-label">Map Layer</div>
@@ -1219,8 +1244,9 @@ def generate_html_map(data_by_location, output_file):
             updateImageTransform(modalImg);
         }
         
-        // Touch gesture support for mobile zoom
+        // Touch gesture support for mobile zoom and swipe navigation
         var touchStartDistance = 0;
+        var touchStartX = 0;
         
         function getTouchDistance(e) {
             if (e.touches.length < 2) return 0;
@@ -1232,6 +1258,8 @@ def generate_html_map(data_by_location, output_file):
         document.getElementById('modalImage').addEventListener('touchstart', function(e) {
             if (e.touches.length === 2) {
                 touchStartDistance = getTouchDistance(e);
+            } else if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
             }
         });
         
@@ -1251,11 +1279,33 @@ def generate_html_map(data_by_location, output_file):
                         }
                     }
                 }
+            } else if (e.touches.length === 1 && touchStartX > 0) {
+                // Allow slight movement during single touch (panning)
+                e.preventDefault();
             }
         });
         
         document.getElementById('modalImage').addEventListener('touchend', function(e) {
-            touchStartDistance = 0;
+            if (touchStartDistance > 0) {
+                // End of pinch gesture
+                touchStartDistance = 0;
+            } else if (touchStartX > 0 && e.changedTouches.length > 0) {
+                // Handle swipe gesture
+                var touchEndX = e.changedTouches[0].clientX;
+                var deltaX = touchEndX - touchStartX;
+                
+                // Only consider significant swipes (more than 50px)
+                if (Math.abs(deltaX) > 50) {
+                    if (deltaX > 0) {
+                        // Swipe right - previous image
+                        changeImage(-1);
+                    } else {
+                        // Swipe left - next image
+                        changeImage(1);
+                    }
+                }
+                touchStartX = 0;
+            }
         });
         
         // Close modal when clicking outside
