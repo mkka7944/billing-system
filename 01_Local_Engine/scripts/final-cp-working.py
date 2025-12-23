@@ -227,11 +227,10 @@ def generate_html_map(data_by_location, output_file):
             "commercial": district_commercial
         })
     
-    # Embed data directly in HTML to avoid external file dependencies
-    # Properly escape JSON data for JavaScript embedding with backtick support
-    survey_data_json = json.dumps(survey_points).replace('`', '\\`').replace('${', '\\${')
-    location_data_json = json.dumps(location_groups).replace('`', '\\`').replace('${', '\\${')
-
+    # Properly escape JSON data for JavaScript embedding
+    survey_data_json = json.dumps(survey_points).replace('\\', '\\\\').replace('"', '\\"')
+    location_data_json = json.dumps(location_groups).replace('\\', '\\\\').replace('"', '\\"')
+    
     html_content = '''<!DOCTYPE html>
 <html>
 <head>
@@ -465,7 +464,6 @@ def generate_html_map(data_by_location, output_file):
             height: 100%;
             border-right: 1px solid #e2e8f0;
             overflow-y: auto;
-            overflow-x: hidden;
             background: #fff;
             z-index: 5;
             padding-bottom: 100px;
@@ -536,69 +534,11 @@ def generate_html_map(data_by_location, output_file):
             align-items: center;
             flex-wrap: wrap;
         }
-        
-        .nav-btn:hover {
-            background: #e2e8f0;
-            border-color: #a0aec0;
-        }
-        
-        .nav-btn:active {
-            transform: translateY(1px);
-        }
-        
-        /* Overlay navigation buttons */
-        .overlay-nav-btn {
-            position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.9);
-            color: #4a5568;
-            border: 1px solid #cbd5e0;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 5000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.2s ease;
-        }
-        
-        .overlay-nav-btn:hover {
-            background: #edf2f7;
-            transform: translateY(-50%) scale(1.1);
-        }
-        
-        .overlay-nav-btn:active {
-            transform: translateY(-50%) scale(0.95);
-        }
-        
-        .prev-overlay {
-            left: 10px;
-        }
-        
-        .next-overlay {
-            right: 10px;
-        }
 
         .explorer-content-area {
             flex: 1;
             overflow-y: auto;
             padding: 30px 40px;
-        }
-        
-        /* Desktop styles for overlay navigation buttons */
-        @media (min-width: 769px) {
-            .prev-overlay {
-                left: 20px;
-            }
-            
-            .next-overlay {
-                right: 20px;
-            }
         }
 
         .detail-split-content {
@@ -726,24 +666,9 @@ def generate_html_map(data_by_location, output_file):
         }
 
         @media (max-width: 768px) {
-            /* Off-canvas behavior for small screens: closed by default */
             .explorer-sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                width: 180px;
-                transform: translateX(-100%);
-                transition: transform 0.28s ease;
-                z-index: 6000;
-                background: #fff;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-                flex: none; /* Override flex property */
+                flex: 0 0 120px; /* Wider for mobile ID visibility */
                 padding-bottom: 80px;
-                overflow-x: hidden;
-            }
-            .explorer-sidebar.open {
-                transform: translateX(0);
             }
             .explorer-sidebar table th, 
             .explorer-sidebar table td:not(:first-child) {
@@ -767,17 +692,6 @@ def generate_html_map(data_by_location, output_file):
                 max-width: 100% !important;
                 width: 100%;
             }
-            /* Reduce search box size for mobile */
-            #listSearch {
-                padding: 8px 12px !important;
-                padding-left: 35px !important;
-                font-size: 12px !important;
-                border-radius: 8px !important;
-            }
-            .header-search-row span {
-                left: 12px !important;
-                font-size: 14px !important;
-            }
             .explorer-actions {
                 top: 0;
                 right: 0;
@@ -794,21 +708,13 @@ def generate_html_map(data_by_location, output_file):
                 padding: 0 6px;
                 font-size: 9px;
                 height: 24px;
-                background: #fff;
-                color: #e53e3e;
             }
             .explorer-content-area {
-                padding: 5px;
+                padding: 10px;
             }
-            
-            /* Reduce padding on mobile for better image visibility */
-            .detail-split-content {
-                gap: 12px;
-            }
-            
             .detail-info-grid {
-                padding: 8px;
-                gap: 8px;
+                padding: 12px;
+                gap: 12px;
             }
             .detail-title {
                 font-size: 16px;
@@ -816,80 +722,15 @@ def generate_html_map(data_by_location, output_file):
             .explorer-gallery {
                 flex-direction: row;
                 flex-wrap: wrap;
-                gap: 6px;
+                gap: 8px;
             }
             .explorer-thumb {
-                width: calc(33.33% - 4px);
+                width: calc(33.33% - 6px);
                 aspect-ratio: 1/1;
-                border-radius: 6px;
+                border-radius: 8px;
             }
             .detail-title {
                 font-size: 18px;
-            }
-            
-            /* Stats modal adjustments for mobile */
-            #statsModal .explorer-main-header {
-                padding: 15px;
-            }
-            
-            #statsModal .stats-container {
-                padding: 10px;
-            }
-            
-            /* Mobile toggle button */
-            .mobile-toggle-btn {
-                position: fixed;
-                top: 5px;
-                left: 5px;
-                z-index: 6001;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 28px;
-                height: 28px;
-                font-size: 16px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            
-            .mobile-toggle-btn:hover {
-                background: #2980b9;
-                transform: scale(1.1);
-            }
-            
-            /* Overlay for closing sidebar */
-            .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 5999;
-                display: none;
-            }
-            .sidebar-overlay.active {
-                display: block;
-            }
-            
-            /* Mobile styles for overlay navigation buttons */
-            .overlay-nav-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 20px;
-            }
-            
-            .prev-overlay {
-                left: 5px;
-            }
-            
-            .next-overlay {
-                right: 5px;
             }
         }
 
@@ -963,7 +804,7 @@ def generate_html_map(data_by_location, output_file):
         .close-btn-modern {
             width: 28px;
             height: 28px;
-            border-radius: 50%;
+            border-radius: 0;
             border: none;
             background: #fff;
             color: #e53e3e;
@@ -978,8 +819,8 @@ def generate_html_map(data_by_location, output_file):
         }
 
         .detail-map-btn {
-            background: #fff;
-            color: #e53e3e;
+            background: #2d3748;
+            color: #fff;
             border: none;
             padding: 0 8px;
             border-radius: 0;
@@ -1210,28 +1051,26 @@ def generate_html_map(data_by_location, output_file):
         /* Mobile-specific adjustments */
         @media (max-width: 768px) {
             .control-btn {
-                padding: 8px 12px;
-                font-size: 16px;
-                min-width: 40px;
-                min-height: 40px;
+                padding: 14px 18px;
+                font-size: 20px;
+                min-width: 50px;
+                min-height: 50px;
             }
             
             .prev, .next {
-                padding: 15px 10px;
-                font-size: 20px;
-                min-width: 40px;
-                min-height: 40px;
+                padding: 20px 15px;
+                font-size: 24px;
             }
             
             .image-controls {
-                top: 10px;
-                left: 10px;
-                gap: 6px;
+                top: 15px;
+                left: 15px;
+                gap: 8px;
             }
             
             .close {
-                top: 10px;
-                right: 10px;
+                top: 15px;
+                right: 15px;
             }
             
             /* Center image in mobile view */
@@ -1280,22 +1119,18 @@ def generate_html_map(data_by_location, output_file):
             <button class="close-btn-modern" onclick="closeListView()" style="z-index: 2100;">×</button>
         </div>
         <div class="explorer-container">
-            <button class="mobile-toggle-btn" onclick="toggleSidebar()" style="display: none; position: fixed; top: 5px; left: 5px; z-index: 6002;">☰</button>
-            <button id="prevRecordBtn" class="overlay-nav-btn prev-overlay" onclick="navigateToPreviousRecord()" style="display: none;">&lsaquo;</button>
-            <button id="nextRecordBtn" class="overlay-nav-btn next-overlay" onclick="navigateToNextRecord()" style="display: none;">&rsaquo;</button>
             <div id="explorerSidebar" class="explorer-sidebar">
                 <!-- List rows injected here -->
             </div>
-            <div class="sidebar-overlay" onclick="closeSidebar()"></div>
             <div class="explorer-main">
                 <div id="explorerMainHeader" class="explorer-main-header">
                     <div class="header-top-row">
-                        <div id="modalTitleArea" style="text-align: center; width: 100%;">
-                            <h2 style="margin: 0; font-size: 20px; color: #1a202c; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                        <div id="modalTitleArea">
+                            <h2 style="margin: 0; font-size: 20px; color: #1a202c; display: flex; align-items: center; gap: 12px;">
                                 <span id="listTitleText">Filtered Records</span>
                                 <span id="searchCount" class="counter-badge"></span>
                             </h2>
-                            <div id="listSubtitle" style="font-size: 11px; color: #718096; margin-top: 4px; text-align: center;">Showing all matching records from current search</div>
+                            <div id="listSubtitle" style="font-size: 13px; color: #718096; margin-top: 4px;">Showing all matching records from current search</div>
                         </div>
                     </div>
                     <div class="header-search-row">
@@ -1307,7 +1142,6 @@ def generate_html_map(data_by_location, output_file):
                         </div>
                         <div id="activeFilterInfo" style="font-size: 12px; color: #64748b; font-weight: 500;"></div>
                     </div>
-                    <!-- Navigation buttons will be added as overlays in CSS -->
                 </div>
                 <div class="explorer-content-area">
                     <div id="explorerDetail">
@@ -1329,6 +1163,7 @@ def generate_html_map(data_by_location, output_file):
         </div>
         <div class="explorer-container" style="flex-direction: column; overflow-y: auto;">
             <div class="explorer-main-header">
+                <h2 style="margin: 0; font-size: 20px; color: #1a202c;">Surveyor Performance Summary</h2>
                 <div id="statsSubtitle" style="font-size: 13px; color: #718096; margin-top: 4px;">Based on current filters and date range</div>
             </div>
             <div class="stats-container" id="statsContent">
@@ -1384,20 +1219,20 @@ def generate_html_map(data_by_location, output_file):
             </div>
             <!-- Date Preset Buttons -->
             <div style="display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap;">
-                <button onclick="setDateRange('today')" style="flex: 1; font-size: 10px; padding: 6px 4px; height: 30px; display: flex; align-items: center; justify-content: center;">Today</button>
-                <button onclick="setDateRange('week')" style="flex: 1; font-size: 10px; padding: 6px 4px; height: 30px; display: flex; align-items: center; justify-content: center;">This Week</button>
-                <button onclick="setDateRange('month')" style="flex: 1; font-size: 10px; padding: 6px 4px; height: 30px; display: flex; align-items: center; justify-content: center;">This Month</button>
-                <button onclick="clearDateRange()" style="flex: 1; font-size: 10px; padding: 6px 4px; height: 30px; background: #e74c3c; display: flex; align-items: center; justify-content: center;">Clear Dates</button>
+                <button onclick="setDateRange('today')" style="flex: 1; font-size: 10px; padding: 4px;">Today</button>
+                <button onclick="setDateRange('week')" style="flex: 1; font-size: 10px; padding: 4px;">This Week</button>
+                <button onclick="setDateRange('month')" style="flex: 1; font-size: 10px; padding: 4px;">This Month</button>
+                <button onclick="clearDateRange()" style="flex: 1; font-size: 10px; padding: 4px; background: #e74c3c;">Clear Dates</button>
             </div>
             <div style="display: flex; gap: 4px; margin-top: 6px;">
-                <button onclick="applyFilters()" style="flex: 1; background: #3498db; color: white; height: 36px; font-size: 11px; padding: 0 4px; display: flex; align-items: center; justify-content: center;">Apply</button>
-                <button onclick="resetFilters()" style="flex: 1; background: #95a5a6; color: white; height: 36px; font-size: 11px; padding: 0 4px; display: flex; align-items: center; justify-content: center;">Reset</button>
+                <button onclick="applyFilters()" style="flex: 1; background: #3498db; color: white;">Apply</button>
+                <button onclick="resetFilters()" style="flex: 1; background: #95a5a6; color: white;">Reset</button>
             </div>
             <div style="display: flex; gap: 4px; margin-top: 6px;">
-                <button onclick="loadAllMarkers()" style="flex: 1; background: #2ecc71; color: white; font-size: 10px; padding: 8px 4px; height: 36px; border: none; display: flex; align-items: center; justify-content: center;">Show All</button>
-                <button onclick="showListView()" style="flex: 1; background: #f39c12; color: white; font-size: 10px; padding: 8px 4px; height: 36px; border: none; display: flex; align-items: center; justify-content: center;">View List</button>
+                <button onclick="loadAllMarkers()" style="flex: 1.5; background: #2ecc71; color: white; font-size: 11px; padding: 10px; border: none;">Show All</button>
+                <button onclick="showListView()" style="flex: 1; background: #f39c12; color: white; font-size: 11px; padding: 10px; border: none;">View List</button>
                 <!-- New Button -->
-                <button onclick="showSurveyorStats()" style="flex: 1; background: #9b59b6; color: white; font-size: 10px; padding: 8px 4px; height: 36px; border: none; box-shadow: 0 4px 6px rgba(155, 89, 182, 0.3); display: flex; align-items: center; justify-content: center;">Surveyor Stats</button>
+                <button onclick="showSurveyorStats()" style="flex: 1.5; background: #9b59b6; color: white; font-size: 11px; padding: 10px; border: none; box-shadow: 0 4px 6px rgba(155, 89, 182, 0.3);">Surveyor Stats</button>
             </div>
             
             <div class="layer-control">
@@ -1489,34 +1324,11 @@ def generate_html_map(data_by_location, output_file):
             document.getElementById('zoom-level').textContent = 'Zoom Level: ' + map.getZoom();
         });
         
-        // Survey data - parse JSON string back to object using template literals
-        try {
-            var surveyData = JSON.parse(`''' + survey_data_json + '''`);
-            console.log('Successfully loaded survey data:', surveyData.length + ' records');
-        } catch (e) {
-            console.error('Failed to parse survey data:', e);
-            console.log('Raw survey data string:', `''' + survey_data_json + '''`);
-            var surveyData = [];
-        }
+        // Survey data - parse JSON string back to object
+        var surveyData = JSON.parse("''' + survey_data_json + '''");
         
-        // Location data - parse JSON string back to object using template literals
-        try {
-            var locationData = JSON.parse(`''' + location_data_json + '''`);
-            console.log('Successfully loaded location data:', locationData.length + ' districts');
-        } catch (e) {
-            console.error('Failed to parse location data:', e);
-            console.log('Raw location data string:', `''' + location_data_json + '''`);
-            var locationData = [];
-        }
-        
-        // Auto-apply filters after data load
-        updateStatusBar('Data loaded. Rendering markers...');
-        try {
-            // Small timeout to ensure UI updates before heavy rendering
-            setTimeout(function(){ applyFilters(); }, 100);
-        } catch (e) {
-            console.error('Error applying filters after data load', e);
-        }
+        // Location data for filtering - parse JSON string back to object
+        var locationData = JSON.parse("''' + location_data_json + '''");        
         // Create marker layers
         var markers = L.layerGroup().addTo(map);
         
@@ -1789,23 +1601,14 @@ def generate_html_map(data_by_location, output_file):
                     }
                 }
                 
-                // Parse location with better error handling
-                if (!survey.location || typeof survey.location !== 'string') return false;
-                
+                // Parse location
                 var coords = survey.location.split(',');
                 if (coords.length !== 2) return false;
                 
-                // Clean coordinates
-                var latStr = coords[0].trim();
-                var lngStr = coords[1].trim();
-                
-                var lat = parseFloat(latStr);
-                var lng = parseFloat(lngStr);
+                var lat = parseFloat(coords[0]);
+                var lng = parseFloat(coords[1]);
                 
                 if (isNaN(lat) || isNaN(lng)) return false;
-                
-                // Validate coordinate ranges
-                if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return false;
                 
                 // Create popup content with multiple image thumbnails
                 var imageUrls = survey.image_urls || [];
@@ -2059,8 +1862,6 @@ def generate_html_map(data_by_location, output_file):
             currentImageIndex = 0;
             currentRotation = 0;
             currentScale = 1;
-            // Collapse main panel
-            collapsePanel();
         }
 
         var currentFilteredSurveys = [];
@@ -2071,7 +1872,6 @@ def generate_html_map(data_by_location, output_file):
             var modal = document.getElementById('listModal');
             var sidebar = document.getElementById('explorerSidebar');
             var detail = document.getElementById('explorerDetail');
-            var toggleBtn = document.querySelector('.mobile-toggle-btn');
             
             sidebar.innerHTML = '';
             detail.innerHTML = '<div style="text-align: center; color: #94a3b8; margin-top: 80px;"><div style="font-size: 60px; margin-bottom: 20px;">📋</div><div style="font-size: 18px; font-weight: 600; color: #475569;">Select a Record</div><div style="font-size: 14px; margin-top: 8px;">Pick a survey from the sidebar to view full details and gallery</div></div>';
@@ -2098,34 +1898,11 @@ def generate_html_map(data_by_location, output_file):
             // Auto-select first item if exists
             if (currentFilteredSurveys.length > 0) {
                 selectExplorerSurvey(currentFilteredSurveys[0]);
-            } else {
-                // Hide navigation buttons if no records
-                var prevBtn = document.getElementById('prevRecordBtn');
-                var nextBtn = document.getElementById('nextRecordBtn');
-                if (prevBtn) prevBtn.style.display = 'none';
-                if (nextBtn) nextBtn.style.display = 'none';
             }
             
             modal.style.display = 'block';
-            
-            // Handle mobile sidebar visibility
-            if (window.innerWidth <= 768) {
-                // Show toggle button for mobile
-                if (toggleBtn) toggleBtn.style.display = 'flex';
-                // Open off-canvas sidebar for mobile
-                if (sidebar) {
-                    sidebar.classList.add('open');
-                    // Show overlay
-                    var overlay = document.querySelector('.sidebar-overlay');
-                    if (overlay) overlay.classList.add('active');
-                }
-            } else {
-                // Hide toggle button for desktop
-                if (toggleBtn) toggleBtn.style.display = 'none';
-                // Ensure sidebar is visible for desktop
-                if (sidebar) sidebar.classList.remove('open');
-            }
         }
+
         function renderListBatch() {
             var sidebar = document.getElementById('explorerSidebar');
             var batch = currentFilteredSurveys.slice(listCurrentIndex, listCurrentIndex + listPageSize);
@@ -2135,7 +1912,7 @@ def generate_html_map(data_by_location, output_file):
                     sidebar.innerHTML = '<div style="text-align: center; padding: 40px; color: #7f8c8d;">No records found.</div>';
                     return;
                 }
-                sidebar.innerHTML = '<div style="overflow-x: auto;"><table style="width: 100%; white-space: nowrap;"><thead><tr><th style="color: #000;">ID</th><th style="text-align: right; color: #000;">Type</th></tr></thead><tbody id="explorerTableBody"></tbody></table></div>';
+                sidebar.innerHTML = '<table><thead><tr><th>ID</th><th style="text-align: right;">Type</th></tr></thead><tbody id="explorerTableBody"></tbody></table>';
             }
             
             var tableBody = document.getElementById('explorerTableBody');
@@ -2154,8 +1931,8 @@ def generate_html_map(data_by_location, output_file):
                 var typeColor = survey.consumer_type === 'Domestic' ? '#27ae60' : '#d35400';
                 
                 row.innerHTML = 
-                    '<td style="padding: 15px 20px;"><span class="row-id">' + survey.survey_id + '</span></td>' +
-                    '<td class="sidebar-type" style="padding: 15px 20px; text-align: right;"><span style="font-size: 10px; color: ' + typeColor + '; font-weight: bold;">' + typeLabel + '</span></td>';
+                    '<td><span class="row-id">' + survey.survey_id + '</span></td>' +
+                    '<td class="sidebar-type" style="text-align: right;"><span style="font-size: 10px; color: ' + typeColor + '; font-weight: bold;">' + typeLabel + '</span></td>';
                 
                 tableBody.appendChild(row);
             });
@@ -2168,57 +1945,9 @@ def generate_html_map(data_by_location, output_file):
                 loadMoreRow.innerHTML = '<td colspan="3" style="text-align: center; padding: 15px;"><button onclick="renderListBatch()" style="background: transparent; color: #3498db; border: 1px solid #3498db; padding: 5px 20px; border-radius: 15px; cursor: pointer; font-size: 11px;">Load More</button></td>';
                 tableBody.appendChild(loadMoreRow);
             }
-            
-            // Ensure sidebar is open on mobile after rendering
-            if (window.innerWidth <= 768) {
-                var sidebarElement = document.getElementById('explorerSidebar');
-                var overlay = document.querySelector('.sidebar-overlay');
-                if (sidebarElement && !sidebarElement.classList.contains('open')) {
-                    sidebarElement.classList.add('open');
-                    if (overlay) overlay.classList.add('active');
-                }
-            }
         }
-        
-        // Navigation functions
-        function navigateToPreviousRecord() {
-            if (currentSelectedSurveyIndex > 0) {
-                currentSelectedSurveyIndex--;
-                selectExplorerSurvey(currentFilteredSurveys[currentSelectedSurveyIndex]);
-                updateNavigationButtons();
-            }
-        }
-        
-        function navigateToNextRecord() {
-            if (currentSelectedSurveyIndex < currentFilteredSurveys.length - 1) {
-                currentSelectedSurveyIndex++;
-                selectExplorerSurvey(currentFilteredSurveys[currentSelectedSurveyIndex]);
-                updateNavigationButtons();
-            }
-        }
-        
-        function updateNavigationButtons() {
-            var prevBtn = document.getElementById('prevRecordBtn');
-            var nextBtn = document.getElementById('nextRecordBtn');
-            
-            if (prevBtn && nextBtn) {
-                prevBtn.style.display = currentSelectedSurveyIndex > 0 ? 'flex' : 'none';
-                nextBtn.style.display = currentSelectedSurveyIndex < currentFilteredSurveys.length - 1 ? 'flex' : 'none';
-            }
-        }
-        
-        // Track the currently selected survey index
-        var currentSelectedSurveyIndex = -1;
         
         function selectExplorerSurvey(survey) {
-            // Find the index of the selected survey
-            currentSelectedSurveyIndex = currentFilteredSurveys.findIndex(function(s) {
-                return s.survey_id === survey.survey_id;
-            });
-            
-            // Update navigation buttons
-            updateNavigationButtons();
-            
             // Update UI selection
             var rows = document.getElementsByClassName('list-row');
             for (var i = 0; i < rows.length; i++) {
@@ -2236,35 +1965,34 @@ def generate_html_map(data_by_location, output_file):
             
             // 1. Date and Time (Top Full Width)
             infoGridHtml += 
-                '<div class="info-item" style="grid-column: span 2; border-bottom: 1px dashed #edf2f7; padding-bottom: 8px; margin-bottom: 4px;">' +
-                    '<div class="info-label" style="font-size: 9px; color: #718096;">Submission Timestamp</div>' +
-                    '<div class="info-value" style="color: #4a5568; font-size: 12px; font-weight: 600;">' + (survey.survey_date || 'N/A') + ' ' + (survey.survey_time || '') + '</div>' +
+                '<div class="info-item" style="grid-column: span 2; border-bottom: 1px dashed #edf2f7; padding-bottom: 10px; margin-bottom: 5px;">' +
+                    '<div class="info-label" style="font-size: 10px; color: #718096;">Submission Timestamp</div>' +
+                    '<div class="info-value" style="color: #4a5568; font-size: 13px; font-weight: 600;">' + (survey.survey_date || 'N/A') + ' ' + (survey.survey_time || '') + '</div>' +
                 '</div>';
 
             // 2. ID and Surveyor Name side-by-side
             infoGridHtml += 
-                '<div class="info-item" style="background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;">' +
-                    '<div class="info-label" style="color: #3182ce; font-size: 9px;">Survey ID</div>' +
-                    '<div class="info-value" style="color: #1a202c; font-size: 14px; font-weight: 800;">#' + survey.survey_id + '</div>' +
+                '<div class="info-item" style="background: #f8fafc; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">' +
+                    '<div class="info-label" style="color: #3182ce; font-size: 10px;">Survey ID</div>' +
+                    '<div class="info-value" style="color: #1a202c; font-size: 15px; font-weight: 800;">#' + survey.survey_id + '</div>' +
                 '</div>' +
-                '<div class="info-item" style="background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;">' +
-                    '<div class="info-label" style="color: #3182ce; font-size: 9px;">Surveyor Personnel</div>' +
-                    '<div class="info-value" style="color: #1a202c; font-size: 14px; font-weight: 800;">' + (survey.surveyor_name || 'N/A') + '</div>' +
+                '<div class="info-item" style="background: #f8fafc; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">' +
+                    '<div class="info-label" style="color: #3182ce; font-size: 10px;">Surveyor Personnel</div>' +
+                    '<div class="info-value" style="color: #1a202c; font-size: 15px; font-weight: 800;">' + (survey.surveyor_name || 'N/A') + '</div>' +
                 '</div>';
 
-            // 3. Consumer Name with Category Type
-            var categoryType = survey.consumer_type + (survey.uc_type ? ' (' + survey.uc_type + ')' : '');
+            // 3. Consumer Name (Full width)
             infoGridHtml += 
-                '<div class="info-item" style="grid-column: span 2; margin-top: 4px;">' +
-                    '<div class="info-label" style="font-size: 10px;">Consumer Name & Category</div>' +
-                    '<div class="info-value" style="color: #1a202c; font-weight: 700; font-size: 15px;">' + (survey.consumer_name || 'N/A') + ' <span style="color: #718096; font-weight: 500; font-size: 12px;">(' + categoryType + ')</span></div>' +
+                '<div class="info-item" style="grid-column: span 2; margin-top: 5px;">' +
+                    '<div class="info-label">Consumer Name</div>' +
+                    '<div class="info-value" style="color: #1a202c; font-weight: 700; font-size: 16px;">' + (survey.consumer_name || 'N/A') + '</div>' +
                 '</div>';
 
             // 4. Site Address (Full width)
             infoGridHtml += 
-                '<div class="info-item" style="grid-column: span 2; margin-bottom: 4px;">' +
-                    '<div class="info-label" style="font-size: 10px;">Site Address</div>' +
-                    '<div class="info-value" style="line-height: 1.4; color: #4a5568; font-size: 12px;">' + (survey.consumer_address || 'N/A') + '</div>' +
+                '<div class="info-item" style="grid-column: span 2; margin-bottom: 5px;">' +
+                    '<div class="info-label">Site Address</div>' +
+                    '<div class="info-value" style="line-height: 1.4; color: #4a5568; font-size: 13px;">' + (survey.consumer_address || 'N/A') + '</div>' +
                 '</div>';
 
             // Update unified map button
@@ -2272,27 +2000,26 @@ def generate_html_map(data_by_location, output_file):
             mapBtn.style.display = 'flex';
             mapBtn.onclick = function() { zoomToMarker(survey); };
 
-            // Keep level, type, and structure type in one line and 3 columns
-            infoGridHtml += 
-                '<div class="info-item" style="grid-column: span 2; display: flex; gap: 10px;">' +
-                    '<div style="flex: 1;">' +
-                        '<div class="info-label" style="font-size: 10px;">Level</div>' +
-                        '<div class="info-value" style="font-size: 12px;">' + (survey.level || 'N/A') + '</div>' +
-                    '</div>' +
-                    '<div style="flex: 1;">' +
-                        '<div class="info-label" style="font-size: 10px;">Type</div>' +
-                        '<div class="info-value" style="font-size: 12px;">' + (survey.survey_type || 'N/A') + '</div>' +
-                    '</div>' +
-                    '<div style="flex: 1;">' +
-                        '<div class="info-label" style="font-size: 10px;">Structure Type</div>' +
-                        '<div class="info-value" style="font-size: 12px;">' + (survey.house_type || 'N/A') + '</div>' +
-                    '</div>' +
-                '</div>';
+            var infoFields = [
+                { label: 'Category Type', value: survey.consumer_type + (survey.uc_type ? ' (' + survey.uc_type + ')' : ''), highlight: false },
+                { label: 'Level', value: survey.level || 'N/A', highlight: false },
+                { label: 'Type', value: survey.survey_type || 'N/A', highlight: false },
+                { label: 'Structure Type', value: survey.house_type || 'N/A', highlight: false },
+                { label: 'Administrative Unit', value: survey.mc_uc, highlight: false }
+            ];
+            
+            infoFields.forEach(function(field, idx) {
+                infoGridHtml += 
+                    '<div class="info-item">' +
+                        '<div class="info-label">' + field.label + '</div>' +
+                        '<div class="info-value" style="font-size: 13px;">' + field.value + '</div>' +
+                    '</div>';
+            });
             infoGridHtml += '</div>';
             
             var galleryHtml = '';
             if (imageUrls.length > 0) {
-                galleryHtml = '<div style="margin-bottom: 8px; font-size: 10px; color: #718096; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Field Media Gallery (' + imageUrls.length + ')</div>' +
+                galleryHtml = '<div style="margin-bottom: 12px; font-size: 11px; color: #718096; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Field Media Gallery (' + imageUrls.length + ')</div>' +
                               '<div class="explorer-gallery">';
                 imageUrls.forEach(function(url, idx) {
                     galleryHtml += '<img src="' + url + '" class="explorer-thumb" onclick="openImageViewer(' + JSON.stringify(imageUrls).replace(/"/g, '&quot;') + ', ' + idx + ')" alt="Survey Image">';
@@ -2309,59 +2036,13 @@ def generate_html_map(data_by_location, output_file):
                     '<div class="detail-gallery-column">' + galleryHtml + '</div>' + 
                     '<div class="detail-info-column">' + infoGridHtml + '</div>' + 
                 '</div>';
-            
-            // Close sidebar on mobile after selection
-            if (window.innerWidth <= 768) {
-                var sidebar = document.getElementById('explorerSidebar');
-                var overlay = document.querySelector('.sidebar-overlay');
-                if (sidebar) {
-                    sidebar.classList.remove('open');
-                    if (overlay) overlay.classList.remove('active');
-                }
-            }
         }
         
         function closeListView() {
             document.getElementById('listModal').style.display = 'none';
             document.getElementById('detailMapBtn').style.display = 'none';
-            var sidebar = document.getElementById('explorerSidebar');
-            var toggleBtn = document.querySelector('.mobile-toggle-btn');
-            if (sidebar) sidebar.classList.remove('open');
-            // Hide overlay
-            var overlay = document.querySelector('.sidebar-overlay');
-            if (overlay) overlay.classList.remove('active');
-            // Hide toggle button
-            if (toggleBtn) toggleBtn.style.display = 'none';
-            // Collapse main panel
-            collapsePanel();
         }
-        
-        function toggleSidebar() {
-            var sidebar = document.getElementById('explorerSidebar');
-            var overlay = document.querySelector('.sidebar-overlay');
-            if (sidebar) {
-                sidebar.classList.toggle('open');
-                if (overlay) {
-                    if (sidebar.classList.contains('open')) {
-                        overlay.classList.add('active');
-                    } else {
-                        overlay.classList.remove('active');
-                    }
-                }
-            }
-        }
-        
-        function closeSidebar() {
-            var sidebar = document.getElementById('explorerSidebar');
-            var overlay = document.querySelector('.sidebar-overlay');
-            if (sidebar) {
-                sidebar.classList.remove('open');
-                if (overlay) {
-                    overlay.classList.remove('active');
-                }
-            }
-        }
-        
+
         function filterList() {
             var search = document.getElementById('listSearch').value.toLowerCase();
             var sidebar = document.getElementById('explorerSidebar');
@@ -2381,7 +2062,7 @@ def generate_html_map(data_by_location, output_file):
             });
 
             // Render search results
-            sidebar.innerHTML = '<div style="overflow-x: auto;"><table style="width: 100%; white-space: nowrap;"><thead><tr><th style="color: #000;">ID</th><th style="text-align: right; color: #000;">Type</th></tr></thead><tbody id="explorerTableBody"></tbody></table></div>';
+            sidebar.innerHTML = '<table><thead><tr><th>ID</th><th style="text-align: right;">Type</th></tr></thead><tbody id="explorerTableBody"></tbody></table>';
             var tableBody = document.getElementById('explorerTableBody');
             
             var resultsToDisplay = matched.slice(0, 100);
@@ -2400,17 +2081,11 @@ def generate_html_map(data_by_location, output_file):
                     var typeColor = survey.consumer_type === 'Domestic' ? '#27ae60' : '#d35400';
                     
                     row.innerHTML = 
-                        '<td style="padding: 15px 20px;"><span class="row-id">' + survey.survey_id + '</span></td>' +
-                        '<td class="sidebar-type" style="padding: 15px 20px; text-align: right;"><span style="font-size: 10px; color: ' + typeColor + '; font-weight: bold;">' + typeLabel + '</span></td>';
+                        '<td><span class="row-id">' + survey.survey_id + '</span></td>' +
+                        '<td class="sidebar-type" style="text-align: right;"><span style="font-size: 10px; color: ' + typeColor + '; font-weight: bold;">' + typeLabel + '</span></td>';
                     
                     tableBody.appendChild(row);
                 });
-            }
-            
-            // Close sidebar on mobile after search if it was open
-            if (window.innerWidth <= 768) {
-                var overlay = document.querySelector('.sidebar-overlay');
-                if (overlay) overlay.classList.remove('active');
             }
         }
         
@@ -2789,20 +2464,19 @@ def generate_html_map(data_by_location, output_file):
                        '</div>';
 
             // Professional Table
-            html += '<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">' +
-                   '<table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); min-width: 800px;">' +
+            html += '<table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">' +
                    '<thead>' +
-                   '<tr style="background: #2c3e50; color: #ffffff;">' +
-                   '<th style="padding: 8px; text-align: left; font-weight: 600; font-size: 12px;">Rank</th>' +
-                   '<th style="padding: 8px; text-align: left; font-weight: 600; font-size: 12px;">Surveyor Name</th>' +
-                   '<th style="padding: 8px; text-align: center; font-weight: 600; font-size: 12px; background: #3498db;">Total</th>' +
-                   '<th style="padding: 8px; text-align: center; font-weight: 600; font-size: 12px;">Idle (min)</th>' +
-                   '<th style="padding: 8px; text-align: center; font-weight: 600; font-size: 12px;">Status</th>' +
-                   '<th style="padding: 8px; text-align: center; font-weight: 600; font-size: 12px; background: #3498db;">PM Count</th>' +
-                   '<th style="padding: 8px; text-align: center; font-weight: 600; font-size: 12px;">Domestic</th>' +
-                   '<th style="padding: 8px; text-align: center; font-weight: 600; font-size: 12px;">Commercial</th>' +
-                   '<th style="padding: 8px; text-align: left; font-weight: 600; font-size: 12px;">First Submission</th>' +
-                   '<th style="padding: 8px; text-align: left; font-weight: 600; font-size: 12px;">Last Submission</th>' +
+                   '<tr style="background: #3498db; color: white;">' +
+                   '<th style="padding: 12px; text-align: left; font-weight: 600; font-size: 14px;">Rank</th>' +
+                   '<th style="padding: 12px; text-align: left; font-weight: 600; font-size: 14px;">Surveyor Name</th>' +
+                   '<th style="padding: 12px; text-align: left; font-weight: 600; font-size: 14px;">First Submission</th>' +
+                   '<th style="padding: 12px; text-align: left; font-weight: 600; font-size: 14px;">Last Submission</th>' +
+                   '<th style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Domestic</th>' +
+                   '<th style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Commercial</th>' +
+                   '<th style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px; background: #e3f2fd;">Total</th>' +
+                   '<th style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Idle (min)</th>' +
+                   '<th style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Status</th>' +
+                   '<th style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px; background: #e3f2fd;">PM Count</th>' +
                    '</tr>' +
                    '</thead>' +
                    '<tbody>';
@@ -2815,21 +2489,20 @@ def generate_html_map(data_by_location, output_file):
                 if (s.idleWarning === 'ABSENT') statusColor = '#e74c3c';
                 
                 html += '<tr style="background: ' + rowColor + '; border-bottom: 1px solid #eee;">' +
-                        '<td style="padding: 8px; font-size: 12px; font-weight: 600; color: #3498db;">' + (index + 1) + (index < 5 ? ' 🏆' : '') + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; font-weight: 500; color: #2c3e50;">' + name + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; text-align: center; font-weight: 700; color: #3498db; background: #e3f2fd;">' + s.total + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; text-align: center; color: #2c3e50;">' + s.idleMinutes + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; text-align: center; font-weight: 600; color: ' + statusColor + ';">' + (s.idleWarning || 'OK') + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; text-align: center; font-weight: 700; color: #3498db; background: #e3f2fd;">' + s.pmCount + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; text-align: center; color: #27ae60; font-weight: 600;">' + s.domestic + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; text-align: center; color: #e67e22; font-weight: 600;">' + s.commercial + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; color: #2c3e50;">' + (s.firstSubmission ? formatTime(s.firstSubmission) : 'N/A') + '</td>' +
-                        '<td style="padding: 8px; font-size: 12px; color: #2c3e50;">' + (s.lastSubmission ? formatTime(s.lastSubmission) : 'N/A') + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; font-weight: 600; color: #3498db;">' + (index + 1) + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; font-weight: 500; color: #2c3e50;">' + name + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; color: #2c3e50;">' + (s.firstSubmission ? formatTime(s.firstSubmission) : 'N/A') + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; color: #2c3e50;">' + (s.lastSubmission ? formatTime(s.lastSubmission) : 'N/A') + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; text-align: center; color: #27ae60; font-weight: 600;">' + s.domestic + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; text-align: center; color: #e67e22; font-weight: 600;">' + s.commercial + '</td>' +
+                        '<td style="padding: 12px; font-size: 16px; text-align: center; font-weight: 700; color: #3498db; background: #e3f2fd;">' + s.total + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; text-align: center; color: #2c3e50;">' + s.idleMinutes + '</td>' +
+                        '<td style="padding: 12px; font-size: 14px; text-align: center; font-weight: 600; color: ' + statusColor + ';">' + (s.idleWarning || 'OK') + '</td>' +
+                        '<td style="padding: 12px; font-size: 16px; text-align: center; font-weight: 700; color: #3498db; background: #e3f2fd;">' + s.pmCount + '</td>' +
                         '</tr>';
             });
 
-            html += '</tbody></table>' +
-                   '</div>';
+            html += '</tbody></table>';
             
             // Summary Footer
             html += '<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">' +
@@ -2844,8 +2517,6 @@ def generate_html_map(data_by_location, output_file):
 
         function closeStatsView() {
             document.getElementById('statsModal').style.display = 'none';
-            // Collapse main panel
-            collapsePanel();
         }
         
         // Close modal when clicking outside
@@ -2855,33 +2526,6 @@ def generate_html_map(data_by_location, output_file):
                 closeImageViewer();
             }
         }
-        
-        // Handle window resize for responsive layout
-        window.addEventListener('resize', function() {
-            var modal = document.getElementById('listModal');
-            var toggleBtn = document.querySelector('.mobile-toggle-btn');
-            var sidebar = document.getElementById('explorerSidebar');
-            
-            if (modal && modal.style.display === 'block') { // Only if list view is open
-                if (window.innerWidth <= 768) {
-                    // Mobile view
-                    if (toggleBtn) toggleBtn.style.display = 'flex';
-                    // Keep sidebar state as is, but ensure overlay is correct
-                    if (sidebar && sidebar.classList.contains('open')) {
-                        var overlay = document.querySelector('.sidebar-overlay');
-                        if (overlay) overlay.classList.add('active');
-                    }
-                } else {
-                    // Desktop view
-                    if (toggleBtn) toggleBtn.style.display = 'none';
-                    // Ensure sidebar is visible on desktop
-                    if (sidebar) sidebar.classList.remove('open');
-                    // Hide overlay
-                    var overlay = document.querySelector('.sidebar-overlay');
-                    if (overlay) overlay.classList.remove('active');
-                }
-            }
-        });
         
         // Keyboard navigation
         document.onkeydown = function(e) {
@@ -2908,29 +2552,31 @@ def generate_html_map(data_by_location, output_file):
             }
         }
         
-        // Initialize with panel collapsed by default
+        // Initialize with panel expanded as per project configuration
         document.addEventListener('DOMContentLoaded', function() {
             var infoPanel = document.getElementById('infoPanel');
             var floatingBtn = document.getElementById('floatingExpandBtn');
-
-            // Hide the info panel by default
-            infoPanel.style.display = 'none';
-
-            // Show the floating expand button
-            floatingBtn.style.display = 'block';
-
-            // Initialize filters and default to 'all' so markers are visible on load
-            var districtSelect = document.getElementById('districtFilter');
-            var tehsilSelect = document.getElementById('tehsilFilter');
-            var mcucSelect = document.getElementById('mcucFilter');
-
-            // Default to show all records on initial load
-            if (districtSelect) districtSelect.value = 'all';
+            
+            // Show the info panel
+            infoPanel.style.display = 'block';
+            
+            // Hide the floating expand button
+            floatingBtn.style.display = 'none';
+            
+            // Initialize filters - default to Sargodha district, Sargodha tehsil, and MC-1
+            document.getElementById('districtFilter').value = 'Sargodha';
             populateTehsilFilter();
-            if (tehsilSelect) tehsilSelect.value = 'all';
+            // Set tehsil to Sargodha
+            document.getElementById('tehsilFilter').value = 'Sargodha';
             populateMCUCFilter();
-            if (mcucSelect) mcucSelect.value = 'all';
-
+            // Set MC/UC to MC-1 (first option that contains 'MC-1')
+            var mcucSelect = document.getElementById('mcucFilter');
+            for (var i = 0; i < mcucSelect.options.length; i++) {
+                if (mcucSelect.options[i].text.includes('MC-1') || mcucSelect.options[i].value.includes('MC-1')) {
+                    mcucSelect.selectedIndex = i;
+                    break;
+                }
+            }
             // Apply filters to show initial data
             applyFilters();
         });
@@ -2945,13 +2591,7 @@ def generate_html_map(data_by_location, output_file):
 
 def process_csv_files():
     """Process CSV files and generate map data"""
-    # Process only SURVEY data CSV files, excluding the MASTER file and payment history files
-    # We want strictly the "CITY_NAME_SURVEY_DATA.csv" format essentially
-    csv_files = [f for f in os.listdir(INPUT_FOLDER) 
-                 if f.endswith('.csv') 
-                 and 'SURVEY' in f.upper() 
-                 and 'MASTER' not in f.upper()
-                 and 'PAID_ALL_HISTORY' not in f.upper()]
+    csv_files = [f for f in os.listdir(INPUT_FOLDER) if f.endswith('.csv') and 'SURVEY_DATA' in f]
     
     if not csv_files:
         print("No CSV files found in the input folder")
@@ -2959,10 +2599,6 @@ def process_csv_files():
     
     # Collect data by district -> tehsil -> MC/UC -> records
     data_by_location = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    
-    # Track unique Survey IDs to prevent duplicates
-    seen_survey_ids = set()
-    duplicates_count = 0
     
     for csv_file in csv_files:
         file_path = os.path.join(INPUT_FOLDER, csv_file)
@@ -2973,26 +2609,13 @@ def process_csv_files():
             df = pd.read_csv(file_path, encoding='utf-8-sig', low_memory=False)
             
             # Required columns check
-            required_columns = ['Latitude', 'Longitude', 'District', 'Tehsil', 'Union Council', 'Survey ID']
+            required_columns = ['Latitude', 'Longitude', 'District', 'Tehsil', 'Union Council']
             if not all(col in df.columns for col in required_columns):
-                # Try to see if 'Survey ID' is missing but maybe 'id' exists or similar? 
-                # For now, strict check based on previous file content observations
-                missing = [col for col in required_columns if col not in df.columns]
-                print(f"Skipping {csv_file} - missing required columns: {missing}")
+                print(f"Skipping {csv_file} - missing required columns")
                 continue
             
             # Process each row
             for _, row in df.iterrows():
-                # Deduplication check
-                survey_id = str(row.get('Survey ID', '')).strip()
-                if not survey_id:
-                    continue # Skip records with no ID
-                    
-                if survey_id in seen_survey_ids:
-                    duplicates_count += 1
-                    continue
-                seen_survey_ids.add(survey_id)
-
                 # Skip if location is missing
                 lat = str(row.get('Latitude', '')).strip()
                 lon = str(row.get('Longitude', '')).strip()
@@ -3020,9 +2643,7 @@ def process_csv_files():
             print(f"Error processing {csv_file}: {e}")
     
     # Generate HTML map
-    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "outputs"))
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "field_staff_map.html")
+    output_file = os.path.join("..", "outputs", "field_staff_map.html")
     generate_html_map(data_by_location, output_file)
     
     # Print summary
@@ -3040,7 +2661,6 @@ def process_csv_files():
     print(f"\nSummary:")
     print(f"- Processed {len(csv_files)} CSV files")
     print(f"- Total survey records: {total_records}")
-    print(f"- Duplicates removed: {duplicates_count}")
     print(f"- Unique districts: {len(data_by_location)}")
     print(f"- Unique tehsils: {total_tehsils}")
     print(f"- Unique MC/UC areas: {total_mcucs}")

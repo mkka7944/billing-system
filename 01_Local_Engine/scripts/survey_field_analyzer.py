@@ -318,7 +318,9 @@ def process_district_tehsil_combination(session, district_id, tehsil_id, distric
             except:
                 num_pages = 1000
         else:
-            print(f"   📉 New data available. Starting Smart Sync until last known ID ({last_known_id}) is reached.")
+            diff = latest_server_id - last_known_id
+            print(f"   📉 OUT OF DATE. Server is ahead by approx {diff} IDs.")
+            print(f"      Starting Smart Sync until ID {last_known_id} is reached.")
             
             # We don't know exactly how many pages because IDs might skip, 
             # but we set a high limit and rely on the 'stop_fetching' logic in the loop.
@@ -332,10 +334,7 @@ def process_district_tehsil_combination(session, district_id, tehsil_id, distric
     area_records_raw = []
     
     # Fetch specified number of pages
-    if fetch_all:
-        print(f"   📥 Scanning for new records (Max limit: {num_pages} pages)...")
-    else:
-        print(f"   📥 Fetching {num_pages} pages of data...")
+    print(f"   📥 Fetching up to {num_pages} pages of data...")
     total_records_fetched = 0
     
     # Create a progress bar for pages

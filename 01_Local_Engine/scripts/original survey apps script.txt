@@ -1,0 +1,91 @@
+// Configuration - Updated for your specific setup
+const CONFIG = {
+  driveFolderName: "scraped_data", // Name of the folder containing your CSV file
+  csvFileName: "SARGODHA_SURVEY_MASTER.csv", // Exact name of your CSV file
+  spreadsheetId: "1AT30aP25QvWT7O73R6rE-r7CK64FjHo2cvCNPaTjvy8", // Your Google Sheet ID
+  sheetName: "surveydatasync" // Your sheet tab name
+};
+
+function importCSVFromDrive() {
+  try {
+    // Find the folder
+    const folders = DriveApp.getFoldersByName(CONFIG.driveFolderName);
+    if (!folders.hasNext()) {
+      console.error("Folder not found: " + CONFIG.driveFolderName);
+      sendEmailNotification("Error: Folder not found - " + CONFIG.driveFolderName);
+      return;
+    }
+    
+    const folder = folders.next();
+    
+    // Find the CSV file
+    const files = folder.getFilesByName(CONFIG.csvFileName);
+    if (!files.hasNext()) {
+      console.error("CSV file not found: " + CONFIG.csvFileName);
+      sendEmailNotification("Error: CSV file not found - " + CONFIG.csvFileName);
+      return;
+    }
+    
+    const csvFile = files.next();
+    const csvData = csvFile.getBlob().getDataAsString();
+    
+    // Parse CSV data
+    const rows = Utilities.parseCsv(csvData);
+    
+    // Open the spreadsheet and sheet
+    const sheet = SpreadsheetApp.openById(CONFIG.spreadsheetId).getSheetByName(CONFIG.sheetName);
+    
+    // Clear existing data (starting from row 2 to preserve header)
+    if (sheet.getLastRow() > 1) {
+      sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clear();
+    }
+    
+    // Write new data (skip header row)
+    if (rows.length > 1) {
+      const dataRange = sheet.getRange(2, 1, rows.length - 1, rows[0].length);
+      dataRange.setValues(rows.slice(1));
+    }
+    
+    console.log("Successfully imported " + (rows.length - 1) + " rows of data");
+    sendEmailNotification("Success: Imported " + (rows.length - 1) + " rows of data");
+    
+  } catch (error) {
+    console.error("Error importing CSV: " + error.toString());
+    sendEmailNotification("Error importing CSV: " + error.toString());
+  }
+}
+
+// Function to send email notification about script execution
+function sendEmailNotification(message) {
+  try {
+    // Get the user's email address
+    const email = Session.getActiveUser().getEmail();
+    MailApp.sendEmail(email, "Survey Data Sync Status", message);
+  } catch (e) {
+    console.log("Could not send email notification: " + e.toString());
+  }
+}
+
+// Function to set up hourly trigger
+function createHourlyTrigger() {
+  // Delete any existing triggers for this function
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'importCSVFromDrive') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  
+  // Create new hourly trigger
+  ScriptApp.newTrigger('importCSVFromDrive')
+    .timeBased()
+    .everyHours(1)
+    .create();
+  
+  console.log("Hourly trigger created successfully");
+}
+
+// Function to test the import manually
+function testImport() {
+  importCSVFromDrive();
+}
